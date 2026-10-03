@@ -14,6 +14,19 @@ interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
 }
 
+const columnLabels: Record<string, string> = {
+  taskNumber: 'Key',
+  project: 'Project',
+  title: 'Title',
+  status: 'Status',
+  priority: 'Priority',
+  sprint: 'Sprint',
+  storyPoints: 'Story Points',
+  dueDate: 'Due Date',
+  assignee: 'Assignee',
+  createdAt: 'Created At',
+};
+
 export function DataTableViewOptions<TData>({
   table,
 }: DataTableViewOptionsProps<TData>) {
@@ -29,7 +42,7 @@ export function DataTableViewOptions<TData>({
           View
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-37.5">
+      <DropdownMenuContent align="end" className="w-44">
         <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {table
@@ -42,11 +55,10 @@ export function DataTableViewOptions<TData>({
             return (
               <DropdownMenuCheckboxItem
                 key={column.id}
-                className="capitalize"
                 checked={column.getIsVisible()}
                 onCheckedChange={(value) => column.toggleVisibility(!!value)}
               >
-                {column.id}
+                {columnLabels[column.id] || column.id}
               </DropdownMenuCheckboxItem>
             );
           })}

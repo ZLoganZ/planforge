@@ -613,9 +613,10 @@ export default function SprintsPage() {
               )}
             </div>
           </div>
-
           <DragOverlay>
-            {activeTask ? <KanbanCardOverlay task={activeTask} /> : null}
+            {activeTask ? (
+              <KanbanCardOverlay task={activeTask} />
+            ) : null}
           </DragOverlay>
         </DndContext>
 

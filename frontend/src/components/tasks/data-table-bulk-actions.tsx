@@ -71,12 +71,12 @@ export function DataTableBulkActions({ table }: DataTableBulkActionsProps) {
   const isPending = bulkUpdate.isPending || bulkDelete.isPending;
 
   return (
-    <div className="flex animate-in flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2.5 shadow-xs transition-all fade-in slide-in-from-top-1">
-      <div className="flex items-center gap-2">
-        <span className="rounded-full bg-primary/20 px-2 py-0.5 text-xs font-semibold text-foreground">
+    <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 animate-in items-center gap-3 rounded-xl border border-border/80 bg-background/95 px-4 py-2 shadow-2xl backdrop-blur-md transition-all slide-in-from-bottom-5 fade-in">
+      <div className="flex items-center gap-2 border-r border-border/60 pr-3">
+        <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
           {selectedCount}
         </span>
-        <span className="text-xs font-medium text-foreground">
+        <span className="text-xs font-medium whitespace-nowrap text-foreground">
           {selectedCount === 1 ? 'task selected' : 'tasks selected'}
         </span>
       </div>

@@ -100,7 +100,6 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
   const [dragColumns, setDragColumns] = useState<Record<string, Task[]> | null>(
     null,
   );
-  const [dragStartColumn, setDragStartColumn] = useState<string | null>(null);
 
   const derivedColumns = useMemo(() => {
     const rawTasks = Array.isArray(tasksData?.items) ? tasksData.items : [];
@@ -182,18 +181,15 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
       const current = dragColumns || derivedColumns;
 
       let foundTask: Task | undefined;
-      let foundCol: string | null = null;
 
-      for (const [colId, list] of Object.entries(current)) {
+      for (const [, list] of Object.entries(current)) {
         const match = list.find((t) => t.id === activeId);
         if (match) {
           foundTask = match;
-          foundCol = colId;
           break;
         }
       }
 
-      setDragStartColumn(foundCol);
       setDragColumns(current);
       if (foundTask) {
         setActiveTask(foundTask);
@@ -209,6 +205,7 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
 
       const activeId = active.id as string;
       const overId = over.id as string;
+      if (activeId === overId) return;
 
       setDragColumns((prev) => {
         const current = prev || derivedColumns;
@@ -230,10 +227,26 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
           if (activeColumn && overColumn) break;
         }
 
-        if (!activeColumn || !overColumn || activeColumn === overColumn) {
+        if (!activeColumn || !overColumn) {
           return prev;
         }
 
+        // Case 1: Reordering within the SAME column
+        if (activeColumn === overColumn) {
+          const colList = current[activeColumn];
+          const activeIndex = colList.findIndex((t) => t.id === activeId);
+          const overIndex = colList.findIndex((t) => t.id === overId);
+
+          if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
+            return {
+              ...current,
+              [activeColumn]: arrayMove(colList, activeIndex, overIndex),
+            };
+          }
+          return prev;
+        }
+
+        // Case 2: Moving from activeColumn into a DIFFERENT overColumn
         const sourceList = current[activeColumn];
         const targetList = current[overColumn];
 
@@ -264,9 +277,7 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event;
-      const sourceCol = dragStartColumn;
       setActiveTask(null);
-      setDragStartColumn(null);
 
       if (!over) {
         setDragColumns(null);
@@ -279,7 +290,7 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
 
       let targetCol: string | undefined;
       for (const [colId, list] of Object.entries(current)) {
-        if (colId === overId || list.some((t) => t.id === overId)) {
+        if (colId === overId || list.some((t) => t.id === overId || t.id === activeId)) {
           targetCol = colId;
           break;
         }
@@ -290,58 +301,37 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
         return;
       }
 
-      const targetList = [...(current[targetCol] || [])];
+      let targetList = [...(current[targetCol] || [])];
 
-      if (sourceCol === targetCol) {
-        // Reordering within the same column
-        const oldIndex = targetList.findIndex((t) => t.id === activeId);
-        const newIndex = targetList.findIndex((t) => t.id === overId);
+      const activeIndex = targetList.findIndex((t) => t.id === activeId);
+      const overIndex = targetList.findIndex((t) => t.id === overId);
 
-        if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-          const reordered = arrayMove(targetList, oldIndex, newIndex);
-          const itemsToUpdate = reordered.map((task, idx) => ({
-            id: task.id,
-            position: idx,
-            status: targetCol,
-          }));
-          reorderTasks.mutate(itemsToUpdate, {
-            onSettled: () => setDragColumns(null),
-          });
+      if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
+        targetList = arrayMove(targetList, activeIndex, overIndex);
+      } else if (activeIndex === -1) {
+        const activeTaskObj = active.data.current?.task as Task | undefined;
+        const movedTask = activeTaskObj
+          ? { ...activeTaskObj, status: targetCol }
+          : ({ id: activeId, status: targetCol } as Task);
+
+        if (overIndex >= 0) {
+          targetList.splice(overIndex, 0, movedTask);
         } else {
-          setDragColumns(null);
+          targetList.push(movedTask);
         }
-      } else {
-        // Moving to a different column
-        const itemsToUpdate: {
-          id: string;
-          position: number;
-          status: string;
-        }[] = [];
-        let foundActive = false;
-
-        targetList.forEach((task, idx) => {
-          if (task.id === activeId) foundActive = true;
-          itemsToUpdate.push({
-            id: task.id,
-            position: idx,
-            status: targetCol,
-          });
-        });
-
-        if (!foundActive) {
-          itemsToUpdate.push({
-            id: activeId,
-            position: targetList.length,
-            status: targetCol,
-          });
-        }
-
-        reorderTasks.mutate(itemsToUpdate, {
-          onSettled: () => setDragColumns(null),
-        });
       }
+
+      const itemsToUpdate = targetList.map((task, idx) => ({
+        id: task.id,
+        position: idx,
+        status: targetCol,
+      }));
+
+      reorderTasks.mutate(itemsToUpdate, {
+        onSettled: () => setDragColumns(null),
+      });
     },
-    [dragStartColumn, dragColumns, derivedColumns, reorderTasks],
+    [dragColumns, derivedColumns, reorderTasks],
   );
 
   const currentProjectIdForCreation =
@@ -472,7 +462,9 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
               easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
             }}
           >
-            {activeTask ? <KanbanCardOverlay task={activeTask} /> : null}
+            {activeTask ? (
+              <KanbanCardOverlay task={activeTask} />
+            ) : null}
           </DragOverlay>
         </DndContext>
       )}

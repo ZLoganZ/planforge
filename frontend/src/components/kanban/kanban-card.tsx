@@ -177,7 +177,7 @@ export const KanbanCardOverlay = React.memo(function KanbanCardOverlay({
   task: Task;
 }) {
   return (
-    <div className="pointer-events-none w-70 rotate-1 cursor-grabbing shadow-2xl">
+    <div className="pointer-events-none w-full cursor-grabbing shadow-2xl">
       <KanbanCardView task={task} isOverlay />
     </div>
   );
@@ -219,12 +219,13 @@ export const KanbanCard = React.memo(function KanbanCard({
   return (
     <div
       ref={setNodeRef}
+      data-task-id={task.id}
       style={style}
       {...attributes}
       {...listeners}
       className={cn(
         'group relative cursor-grab touch-none will-change-transform select-none active:cursor-grabbing',
-        isDragging && 'scale-95 opacity-25',
+        isDragging && 'opacity-25',
       )}
     >
       <KanbanCardView task={task} isOverlay={isOverlay} isDragging={isDragging} onClick={onClick} />
