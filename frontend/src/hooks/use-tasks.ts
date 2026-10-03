@@ -79,7 +79,10 @@ export interface TasksQuery {
   labels?: string[];
 }
 
-export function useTasks(query: TasksQuery = {}) {
+export function useTasks(
+  query: TasksQuery = {},
+  options?: { enabled?: boolean }
+) {
   return useQuery({
     queryKey: ["tasks", query],
     queryFn: async () => {
@@ -93,16 +96,17 @@ export function useTasks(query: TasksQuery = {}) {
       if (query.projectId) params.append("projectId", query.projectId);
       if (query.sprintId) params.append("sprintId", query.sprintId);
 
-      query.statuses?.forEach((status) => params.append("statuses[]", status));
-      query.priorities?.forEach((prio) => params.append("priorities[]", prio));
-      query.assignees?.forEach((id) => params.append("assignees[]", id));
-      query.labels?.forEach((id) => params.append("labels[]", id));
+      query.statuses?.forEach((status) => params.append("statuses", status));
+      query.priorities?.forEach((prio) => params.append("priorities", prio));
+      query.assignees?.forEach((id) => params.append("assignees", id));
+      query.labels?.forEach((id) => params.append("labels", id));
 
       const { data } = await api.get<TasksResponse>(
         `/tasks?${params.toString()}`
       );
       return data;
     },
+    ...options,
   });
 }
 

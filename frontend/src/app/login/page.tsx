@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Zap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -18,14 +18,28 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/auth-context";
 import { getErrorMessage } from "@/lib/utils";
 
-export default function LoginPage() {
-  const { login } = useAuth();
+function LoginForm() {
+  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const rawCallbackUrl = searchParams.get("callbackUrl");
+  const callbackUrl =
+    rawCallbackUrl && rawCallbackUrl.startsWith("/") && !rawCallbackUrl.startsWith("//")
+      ? rawCallbackUrl
+      : "/";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.replace(callbackUrl);
+    }
+  }, [authLoading, isAuthenticated, callbackUrl, router]);
 
   const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
@@ -34,13 +48,26 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      router.push("/");
+      router.push(callbackUrl);
     } catch (err) {
       setError(getErrorMessage(err, "Invalid credentials. Please try again."));
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (authLoading || isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  const registerHref =
+    callbackUrl !== "/"
+      ? `/register?callbackUrl=${encodeURIComponent(callbackUrl)}`
+      : "/register";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -137,7 +164,7 @@ export default function LoginPage() {
             <p className="text-sm text-muted-foreground">
               Don&apos;t have an account?{" "}
               <Link
-                href="/register"
+                href={registerHref}
                 className="font-medium text-primary hover:underline"
               >
                 Create one
@@ -147,5 +174,19 @@ export default function LoginPage() {
         </form>
       </Card>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

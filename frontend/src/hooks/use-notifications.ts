@@ -1,7 +1,6 @@
-"use client";
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { useAuth } from "@/context/auth-context";
 import { notificationsApi } from "@/lib/api";
 
 export interface NotificationItem {
@@ -19,22 +18,26 @@ export function useNotifications(params?: {
   page?: number;
   limit?: number;
 }) {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ["notifications", params],
+    queryKey: ["notifications", user?.id, params],
     queryFn: async () => {
       const res = await notificationsApi.getAll(params);
       return res.data;
     },
+    enabled: Boolean(user?.id),
   });
 }
 
 export function useUnreadNotificationsCount() {
+  const { user } = useAuth();
   return useQuery({
-    queryKey: ["notifications-unread-count"],
+    queryKey: ["notifications-unread-count", user?.id],
     queryFn: async () => {
       const res = await notificationsApi.getUnreadCount();
       return (res.data as { count: number }).count;
     },
+    enabled: Boolean(user?.id),
     refetchInterval: 30000,
   });
 }

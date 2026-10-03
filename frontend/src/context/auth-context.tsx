@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { authApi } from "@/lib/api";
 
@@ -30,13 +31,14 @@ interface AuthContextType {
     firstName: string;
     lastName: string;
   }) => Promise<void>;
-  logout: () => Promise<void>;
+  logout: (customCallbackUrl?: string) => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -63,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchProfile]);
 
   const login = async (email: string, password: string) => {
+    queryClient.clear();
     const { data } = await authApi.login({ email, password });
     const result = data.data || data;
     localStorage.setItem("accessToken", result.accessToken);
@@ -78,14 +81,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await authApi.register(registerData);
   };
 
-  const logout = async () => {
+  const logout = async (customCallbackUrl?: string) => {
     try {
       await authApi.logout();
     } catch {
       // Ignore errors during logout
     } finally {
+      queryClient.clear();
       localStorage.removeItem("accessToken");
       setUser(null);
+      if (typeof window !== "undefined") {
+        const fullPath =
+          customCallbackUrl ??
+          window.location.pathname + window.location.search;
+        const callbackParam =
+          fullPath && fullPath !== "/login" && fullPath !== "/register"
+            ? `?callbackUrl=${encodeURIComponent(fullPath)}`
+            : "";
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+        window.location.href = `/login${callbackParam}`;
+      }
     }
   };
 

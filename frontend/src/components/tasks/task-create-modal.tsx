@@ -107,7 +107,7 @@ export function TaskCreateModal({
 
     if (projectMembers && projectMembers.length > 0) {
       projectMembers.forEach((m) => {
-        if (m.user && !seen.has(m.user.id)) {
+        if (m.user && m.user.isActive !== false && !seen.has(m.user.id)) {
           seen.add(m.user.id);
           list.push({
             id: m.user.id,
@@ -123,7 +123,7 @@ export function TaskCreateModal({
 
     if (usersData?.items) {
       usersData.items.forEach((u: UserMember) => {
-        if (!seen.has(u.id)) {
+        if (u.isActive !== false && !seen.has(u.id)) {
           seen.add(u.id);
           list.push({
             id: u.id,

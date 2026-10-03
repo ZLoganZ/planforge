@@ -120,7 +120,7 @@ export function Header() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={logout}
+            onClick={() => logout()}
             className="text-muted-foreground hover:text-destructive"
             title="Log out"
           >

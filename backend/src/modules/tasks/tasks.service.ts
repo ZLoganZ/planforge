@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   AuditAction,
   NotificationType,
@@ -30,6 +34,18 @@ export class TasksService {
 
   async create(reporterId: string, dto: CreateTaskDto) {
     const { labelIds, ...taskData } = dto;
+
+    if (dto.assigneeId) {
+      const assignee = await this.prisma.user.findUnique({
+        where: { id: dto.assigneeId },
+        select: { id: true, isActive: true, deletedAt: true },
+      });
+      if (!assignee || !assignee.isActive || assignee.deletedAt) {
+        throw new BadRequestException(
+          'Cannot assign task to a suspended or inactive user',
+        );
+      }
+    }
 
     const created = await this.prisma.$transaction(async (tx) => {
       // Get next task number for the project
@@ -290,6 +306,18 @@ export class TasksService {
   async update(id: string, dto: UpdateTaskDto, userId?: string) {
     const { labelIds, ...taskData } = dto;
     const previous = await this.findOne(id); // verify existence
+
+    if (taskData.assigneeId) {
+      const assignee = await this.prisma.user.findUnique({
+        where: { id: taskData.assigneeId },
+        select: { id: true, isActive: true, deletedAt: true },
+      });
+      if (!assignee || !assignee.isActive || assignee.deletedAt) {
+        throw new BadRequestException(
+          'Cannot assign task to a suspended or inactive user',
+        );
+      }
+    }
 
     const updateData: Prisma.TaskUpdateInput = { ...taskData };
 
@@ -647,6 +675,18 @@ export class TasksService {
   async bulkUpdate(dto: BulkUpdateTasksDto) {
     const { taskIds, status, priority, assigneeId, sprintId } = dto;
     if (!taskIds.length) return { count: 0 };
+
+    if (assigneeId) {
+      const assignee = await this.prisma.user.findUnique({
+        where: { id: assigneeId },
+        select: { id: true, isActive: true, deletedAt: true },
+      });
+      if (!assignee || !assignee.isActive || assignee.deletedAt) {
+        throw new BadRequestException(
+          'Cannot assign tasks to a suspended or inactive user',
+        );
+      }
+    }
 
     return this.prisma.$transaction(async (tx) => {
       let count = 0;

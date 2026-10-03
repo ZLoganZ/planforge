@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskPriority, TaskStatus } from '@prisma/client';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsDateString,
@@ -15,6 +15,15 @@ import {
 
 import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto.js';
 
+const toArray = ({ value }: { value: unknown }) => {
+  if (value === undefined || value === null || value === '') return undefined;
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    return value.includes(',') ? value.split(',') : [value];
+  }
+  return [value];
+};
+
 export class QueryTasksDto extends PaginationQueryDto {
   @ApiPropertyOptional()
   @IsOptional()
@@ -23,30 +32,30 @@ export class QueryTasksDto extends PaginationQueryDto {
 
   @ApiPropertyOptional({ enum: TaskStatus, isArray: true })
   @IsOptional()
+  @Transform(toArray)
   @IsArray()
   @IsEnum(TaskStatus, { each: true })
-  @Type(() => String)
   statuses?: TaskStatus[];
 
   @ApiPropertyOptional({ enum: TaskPriority, isArray: true })
   @IsOptional()
+  @Transform(toArray)
   @IsArray()
   @IsEnum(TaskPriority, { each: true })
-  @Type(() => String)
   priorities?: TaskPriority[];
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(toArray)
   @IsArray()
   @IsString({ each: true })
-  @Type(() => String)
   assignees?: string[];
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(toArray)
   @IsArray()
   @IsString({ each: true })
-  @Type(() => String)
   labels?: string[];
 
   @ApiPropertyOptional()

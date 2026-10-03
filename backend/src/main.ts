@@ -22,6 +22,22 @@ async function bootstrap() {
   // Cookies
   app.use(cookieParser());
 
+  // Normalize query parameters ending with [] (e.g., assignees[] -> assignees)
+  app.use((req: any, _res: any, next: any) => {
+    if (req.query) {
+      for (const key of Object.keys(req.query)) {
+        if (key.endsWith('[]')) {
+          const cleanKey = key.slice(0, -2);
+          if (req.query[cleanKey] === undefined) {
+            req.query[cleanKey] = req.query[key];
+          }
+          delete req.query[key];
+        }
+      }
+    }
+    next();
+  });
+
   // Global Prefix
   app.setGlobalPrefix('api');
 

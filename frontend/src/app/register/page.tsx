@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Zap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -18,9 +18,17 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/auth-context";
 import { getErrorMessage } from "@/lib/utils";
 
-export default function RegisterPage() {
-  const { register } = useAuth();
+function RegisterForm() {
+  const { register, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const rawCallbackUrl = searchParams.get("callbackUrl");
+  const callbackUrl =
+    rawCallbackUrl && rawCallbackUrl.startsWith("/") && !rawCallbackUrl.startsWith("//")
+      ? rawCallbackUrl
+      : "/";
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -29,6 +37,12 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.replace(callbackUrl);
+    }
+  }, [authLoading, isAuthenticated, callbackUrl, router]);
+
   const handleSubmit = async (e: React.SubmitEvent) => {
     e.preventDefault();
     setError("");
@@ -36,13 +50,30 @@ export default function RegisterPage() {
 
     try {
       await register({ email, password, firstName, lastName });
-      router.push("/login");
+      const loginParam =
+        callbackUrl !== "/"
+          ? `?callbackUrl=${encodeURIComponent(callbackUrl)}`
+          : "";
+      router.push(`/login${loginParam}`);
     } catch (err) {
       setError(getErrorMessage(err, "Registration failed. Please try again."));
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (authLoading || isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  const loginHref =
+    callbackUrl !== "/"
+      ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`
+      : "/login";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -166,7 +197,7 @@ export default function RegisterPage() {
             <p className="text-sm text-muted-foreground">
               Already have an account?{" "}
               <Link
-                href="/login"
+                href={loginHref}
                 className="font-medium text-primary hover:underline"
               >
                 Sign in
@@ -176,5 +207,19 @@ export default function RegisterPage() {
         </form>
       </Card>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        </div>
+      }
+    >
+      <RegisterForm />
+    </Suspense>
   );
 }

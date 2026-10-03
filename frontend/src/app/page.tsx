@@ -119,12 +119,15 @@ export default function DashboardPage() {
   );
 
   const { user } = useAuth();
-  const { data: myTasksData, isLoading: loadingMyTasks } = useTasks({
-    assignees: user?.id ? [user.id] : undefined,
-    limit: 6,
-    sortBy: "createdAt",
-    sortOrder: "desc",
-  });
+  const { data: myTasksData, isLoading: loadingMyTasks } = useTasks(
+    {
+      assignees: user?.id ? [user.id] : undefined,
+      limit: 6,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    },
+    { enabled: Boolean(user?.id) }
+  );
   const myTasks = myTasksData?.items ?? [];
   const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
   const [detailOpen, setDetailOpen] = React.useState(false);

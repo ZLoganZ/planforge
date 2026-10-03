@@ -14,7 +14,16 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push("/login");
+      if (typeof window !== "undefined") {
+        const fullPath = window.location.pathname + window.location.search;
+        const callbackParam =
+          fullPath && fullPath !== "/login" && fullPath !== "/register"
+            ? `?callbackUrl=${encodeURIComponent(fullPath)}`
+            : "";
+        router.push(`/login${callbackParam}`);
+      } else {
+        router.push("/login");
+      }
     }
   }, [isLoading, isAuthenticated, router]);
 

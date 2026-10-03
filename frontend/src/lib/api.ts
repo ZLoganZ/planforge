@@ -91,8 +91,13 @@ api.interceptors.response.use(
         processQueue(refreshError, null);
         localStorage.removeItem("accessToken");
         if (typeof window !== "undefined") {
+          const fullPath = window.location.pathname + window.location.search;
+          const callbackParam =
+            fullPath && fullPath !== "/login" && fullPath !== "/register"
+              ? `?callbackUrl=${encodeURIComponent(fullPath)}`
+              : "";
           // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-          window.location.href = "/login";
+          window.location.href = `/login${callbackParam}`;
         }
         return Promise.reject(refreshError);
       } finally {
