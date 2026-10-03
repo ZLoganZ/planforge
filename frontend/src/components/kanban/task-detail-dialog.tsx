@@ -1,5 +1,27 @@
 "use client";
 
+import React, { useState } from "react";
+import { format } from "date-fns";
+import {
+  AlertCircle,
+  Calendar as CalendarIcon,
+  Check,
+  CheckCircle2,
+  Download,
+  FileImage,
+  FileText,
+  Hash,
+  Layers,
+  Loader2,
+  Paperclip,
+  Plus,
+  Tag,
+  Trash2,
+  Upload,
+  User,
+  X,
+} from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -34,27 +56,6 @@ import { useCreateLabel, useLabels } from "@/hooks/use-labels";
 import { useSprints } from "@/hooks/use-sprints";
 import { Task, useDeleteTask, useUpdateTask } from "@/hooks/use-tasks";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import {
-  AlertCircle,
-  Calendar as CalendarIcon,
-  Check,
-  CheckCircle2,
-  Download,
-  FileImage,
-  FileText,
-  Hash,
-  Layers,
-  Loader2,
-  Paperclip,
-  Plus,
-  Tag,
-  Trash2,
-  Upload,
-  User,
-  X,
-} from "lucide-react";
-import React, { useState } from "react";
 
 const PRESET_LABEL_COLORS = [
   "#ef4444", // Red
@@ -96,13 +97,13 @@ function TaskDetailForm({
   const [status, setStatus] = useState(task.status || "TODO");
   const [priority, setPriority] = useState(task.priority || "MEDIUM");
   const [storyPoints, setStoryPoints] = useState<number | undefined>(
-    task.storyPoints ?? undefined,
+    task.storyPoints ?? undefined
   );
   const [sprintId, setSprintId] = useState<string>(
-    task.sprintId || task.sprint?.id || "none",
+    task.sprintId || task.sprint?.id || "none"
   );
   const [dueDate, setDueDate] = useState<Date | undefined>(
-    task.dueDate ? new Date(task.dueDate) : undefined,
+    task.dueDate ? new Date(task.dueDate) : undefined
   );
 
   const [selectedLabels, setSelectedLabels] = useState<
@@ -115,7 +116,9 @@ function TaskDetailForm({
   const [labelPopoverOpen, setLabelPopoverOpen] = useState(false);
   const [labelSearch, setLabelSearch] = useState("");
   const [newLabelColor, setNewLabelColor] = useState(PRESET_LABEL_COLORS[5]);
-  const [creatingLabelError, setCreatingLabelError] = useState<string | null>(null);
+  const [creatingLabelError, setCreatingLabelError] = useState<string | null>(
+    null
+  );
 
   const handleCreateLabel = async () => {
     const trimmed = labelSearch.trim();
@@ -221,7 +224,7 @@ function TaskDetailForm({
         err as { response?: { data?: { message?: string | string[] } } }
       )?.response?.data?.message;
       setSaveError(
-        Array.isArray(msg) ? msg.join(", ") : msg || "Failed to save changes.",
+        Array.isArray(msg) ? msg.join(", ") : msg || "Failed to save changes."
       );
     }
   };
@@ -336,7 +339,7 @@ function TaskDetailForm({
               value={storyPoints ?? ""}
               onChange={(e) =>
                 setStoryPoints(
-                  e.target.value === "" ? undefined : Number(e.target.value),
+                  e.target.value === "" ? undefined : Number(e.target.value)
                 )
               }
               placeholder="Pts"
@@ -362,7 +365,7 @@ function TaskDetailForm({
                     className={cn(
                       "h-9 w-full justify-start text-left text-xs font-normal",
                       dueDate ? "pr-8" : "pr-3",
-                      !dueDate && "text-muted-foreground",
+                      !dueDate && "text-muted-foreground"
                     )}
                   >
                     <CalendarIcon className="mr-2 size-3.5 shrink-0 text-muted-foreground" />
@@ -471,11 +474,11 @@ function TaskDetailForm({
                   <div className="max-h-40 space-y-1 overflow-y-auto">
                     {projectLabels
                       .filter((l) =>
-                        l.name.toLowerCase().includes(labelSearch.toLowerCase()),
+                        l.name.toLowerCase().includes(labelSearch.toLowerCase())
                       )
                       .map((label) => {
                         const isSelected = selectedLabels.some(
-                          (sl) => sl.id === label.id,
+                          (sl) => sl.id === label.id
                         );
                         return (
                           <button
@@ -484,7 +487,7 @@ function TaskDetailForm({
                             onClick={() => {
                               if (isSelected) {
                                 setSelectedLabels((prev) =>
-                                  prev.filter((l) => l.id !== label.id),
+                                  prev.filter((l) => l.id !== label.id)
                                 );
                               } else {
                                 setSelectedLabels((prev) => [...prev, label]);
@@ -492,7 +495,7 @@ function TaskDetailForm({
                             }}
                             className={cn(
                               "flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted/80",
-                              isSelected && "bg-muted font-medium",
+                              isSelected && "bg-muted font-medium"
                             )}
                           >
                             <span className="flex items-center gap-2 truncate">
@@ -509,7 +512,7 @@ function TaskDetailForm({
                         );
                       })}
                     {projectLabels.filter((l) =>
-                      l.name.toLowerCase().includes(labelSearch.toLowerCase()),
+                      l.name.toLowerCase().includes(labelSearch.toLowerCase())
                     ).length === 0 &&
                       !labelSearch && (
                         <div className="py-2 text-center text-[11px] text-muted-foreground">
@@ -523,7 +526,7 @@ function TaskDetailForm({
                     !projectLabels.some(
                       (l) =>
                         l.name.toLowerCase() ===
-                        labelSearch.trim().toLowerCase(),
+                        labelSearch.trim().toLowerCase()
                     ) && (
                       <div className="space-y-2 border-t pt-2">
                         <div className="flex items-center gap-1.5">
@@ -535,7 +538,7 @@ function TaskDetailForm({
                               className={cn(
                                 "size-4 rounded-full transition-transform hover:scale-110",
                                 newLabelColor === c &&
-                                  "ring-2 ring-primary ring-offset-1",
+                                  "ring-2 ring-primary ring-offset-1"
                               )}
                               style={{ backgroundColor: c }}
                             />
@@ -579,7 +582,7 @@ function TaskDetailForm({
                   type="button"
                   onClick={() =>
                     setSelectedLabels((prev) =>
-                      prev.filter((l) => l.id !== label.id),
+                      prev.filter((l) => l.id !== label.id)
                     )
                   }
                   className="rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/10"

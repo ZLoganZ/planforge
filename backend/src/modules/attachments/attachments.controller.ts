@@ -1,19 +1,26 @@
 import {
   Controller,
-  Post,
-  Get,
   Delete,
-  Param,
-  Query,
-  UseInterceptors,
-  UploadedFile,
-  ParseFilePipe,
+  Get,
   MaxFileSizeValidator,
+  Param,
+  ParseFilePipe,
+  Post,
+  Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
-import { AttachmentsService } from './attachments.service.js';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+
 import { CurrentUser } from '../../common/decorators/index.js';
+import { AttachmentsService } from './attachments.service.js';
 
 @ApiTags('Attachments')
 @ApiBearerAuth()

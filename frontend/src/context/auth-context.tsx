@@ -1,14 +1,15 @@
-'use client';
+"use client";
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
-  useCallback,
   type ReactNode,
-} from 'react';
-import { authApi } from '@/lib/api';
+} from "react";
+
+import { authApi } from "@/lib/api";
 
 interface User {
   id: string;
@@ -41,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = useCallback(async () => {
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem("accessToken");
       if (!token) {
         setIsLoading(false);
         return;
@@ -49,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data } = await authApi.getProfile();
       setUser(data.data || data);
     } catch {
-      localStorage.removeItem('accessToken');
+      localStorage.removeItem("accessToken");
       setUser(null);
     } finally {
       setIsLoading(false);
@@ -64,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     const { data } = await authApi.login({ email, password });
     const result = data.data || data;
-    localStorage.setItem('accessToken', result.accessToken);
+    localStorage.setItem("accessToken", result.accessToken);
     setUser(result.user);
   };
 
@@ -83,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // Ignore errors during logout
     } finally {
-      localStorage.removeItem('accessToken');
+      localStorage.removeItem("accessToken");
       setUser(null);
     }
   };
@@ -108,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

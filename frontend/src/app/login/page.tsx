@@ -1,12 +1,11 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Zap, Eye, EyeOff } from 'lucide-react';
-import { useAuth } from '@/context/auth-context';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Eye, EyeOff, Zap } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -14,29 +13,32 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { useAuth } from "@/context/auth-context";
 
 export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setIsLoading(true);
 
     try {
       await login(email, password);
-      router.push('/');
+      router.push("/");
     } catch (err) {
-      const axiosError = err as import('axios').AxiosError<{ message: string }>;
+      const axiosError = err as import("axios").AxiosError<{ message: string }>;
       setError(
-        axiosError?.response?.data?.message || 'Invalid credentials. Please try again.',
+        axiosError?.response?.data?.message ||
+          "Invalid credentials. Please try again."
       );
     } finally {
       setIsLoading(false);
@@ -57,9 +59,7 @@ export default function LoginPage() {
             <Zap className="size-7 text-primary-foreground" />
           </div>
           <CardTitle className="text-2xl">Welcome back</CardTitle>
-          <CardDescription>
-            Sign in to your PlanForge account
-          </CardDescription>
+          <CardDescription>Sign in to your PlanForge account</CardDescription>
         </CardHeader>
 
         <form onSubmit={handleSubmit}>
@@ -71,7 +71,10 @@ export default function LoginPage() {
             )}
 
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-foreground">
+              <label
+                htmlFor="email"
+                className="text-sm font-medium text-foreground"
+              >
                 Email
               </label>
               <Input
@@ -86,13 +89,16 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium text-foreground">
+              <label
+                htmlFor="password"
+                className="text-sm font-medium text-foreground"
+              >
                 Password
               </label>
               <div className="relative">
                 <Input
                   id="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -122,19 +128,15 @@ export default function LoginPage() {
           </CardContent>
 
           <CardFooter className="flex flex-col gap-4">
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <div className="size-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
               ) : (
-                'Sign In'
+                "Sign In"
               )}
             </Button>
             <p className="text-sm text-muted-foreground">
-              Don&apos;t have an account?{' '}
+              Don&apos;t have an account?{" "}
               <Link
                 href="/register"
                 className="font-medium text-primary hover:underline"

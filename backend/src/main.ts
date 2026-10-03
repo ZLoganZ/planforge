@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
+
 import { AppModule } from './app.module.js';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter.js';
 import { TransformResponseInterceptor } from './common/interceptors/transform-response.interceptor.js';
@@ -71,14 +72,8 @@ async function bootstrap() {
       'User sign in, register, token rotation, and profile',
     )
     .addTag('Users', 'User management, RBAC role updates, and statuses')
-    .addTag(
-      'Workspaces',
-      'Workspace creation, membership, and settings',
-    )
-    .addTag(
-      'Projects',
-      'Project management, members, and configuration',
-    )
+    .addTag('Workspaces', 'Workspace creation, membership, and settings')
+    .addTag('Projects', 'Project management, members, and configuration')
     .addTag(
       'Tasks',
       'Core task management — multi-filtering, sorting, Kanban, and subtasks',

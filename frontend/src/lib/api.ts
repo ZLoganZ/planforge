@@ -1,31 +1,31 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
 
 export const api = axios.create({
   baseURL: API_URL,
   withCredentials: true,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
 // ─── Request Interceptor: Attach access token ────────────────
 api.interceptors.request.use(
   (config) => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('accessToken');
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("accessToken");
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
     }
     // For multipart/form-data, delete Content-Type so browser sets boundary
-    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
-      delete config.headers['Content-Type'];
+    if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
     }
     return config;
   },
-  (error) => Promise.reject(error),
+  (error) => Promise.reject(error)
 );
 
 // ─── Response Interceptor: Auto-refresh on 401 ──────────────
@@ -50,9 +50,9 @@ api.interceptors.response.use(
   (response) => {
     if (
       response.data &&
-      typeof response.data === 'object' &&
-      'success' in response.data &&
-      'data' in response.data
+      typeof response.data === "object" &&
+      "success" in response.data &&
+      "data" in response.data
     ) {
       response.data = response.data.data;
     }
@@ -64,8 +64,8 @@ api.interceptors.response.use(
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url?.includes('/auth/login') &&
-      !originalRequest.url?.includes('/auth/refresh')
+      !originalRequest.url?.includes("/auth/login") &&
+      !originalRequest.url?.includes("/auth/refresh")
     ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -80,19 +80,19 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const { data } = await api.post('/auth/refresh');
+        const { data } = await api.post("/auth/refresh");
         const newToken = data.data?.accessToken || data.accessToken;
-        localStorage.setItem('accessToken', newToken);
+        localStorage.setItem("accessToken", newToken);
         api.defaults.headers.common.Authorization = `Bearer ${newToken}`;
         processQueue(null, newToken);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        localStorage.removeItem('accessToken');
-        if (typeof window !== 'undefined') {
+        localStorage.removeItem("accessToken");
+        if (typeof window !== "undefined") {
           // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-        window.location.href = '/login';
+          window.location.href = "/login";
         }
         return Promise.reject(refreshError);
       } finally {
@@ -101,7 +101,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  },
+  }
 );
 
 // ─── API Methods ─────────────────────────────────────────────
@@ -113,25 +113,24 @@ export const authApi = {
     password: string;
     firstName: string;
     lastName: string;
-  }) => api.post('/auth/register', data),
+  }) => api.post("/auth/register", data),
 
   login: (data: { email: string; password: string }) =>
-    api.post('/auth/login', data),
+    api.post("/auth/login", data),
 
-  refresh: () => api.post('/auth/refresh'),
+  refresh: () => api.post("/auth/refresh"),
 
-  logout: () => api.post('/auth/logout'),
+  logout: () => api.post("/auth/logout"),
 
-  getProfile: () => api.get('/auth/profile'),
+  getProfile: () => api.get("/auth/profile"),
 
   updateProfile: (data: { firstName?: string; lastName?: string }) =>
-    api.patch('/auth/profile', data),
+    api.patch("/auth/profile", data),
 };
 
 // Users
 export const usersApi = {
-  getAll: (params?: Record<string, unknown>) =>
-    api.get('/users', { params }),
+  getAll: (params?: Record<string, unknown>) => api.get("/users", { params }),
 
   getById: (id: string) => api.get(`/users/${id}`),
 
@@ -144,21 +143,21 @@ export const usersApi = {
 // Audit Logs
 export const auditLogsApi = {
   getAll: (params?: Record<string, unknown>) =>
-    api.get('/audit-logs', { params }),
+    api.get("/audit-logs", { params }),
 
-  getStats: () => api.get('/audit-logs/stats'),
+  getStats: () => api.get("/audit-logs/stats"),
 };
 
 // Notifications
 export const notificationsApi = {
   getAll: (params?: Record<string, unknown>) =>
-    api.get('/notifications', { params }),
+    api.get("/notifications", { params }),
 
-  getUnreadCount: () => api.get('/notifications/unread-count'),
+  getUnreadCount: () => api.get("/notifications/unread-count"),
 
   markAsRead: (id: string) => api.patch(`/notifications/${id}/read`),
 
-  markAllAsRead: () => api.post('/notifications/mark-all-read'),
+  markAllAsRead: () => api.post("/notifications/mark-all-read"),
 
   delete: (id: string) => api.delete(`/notifications/${id}`),
 };
@@ -179,24 +178,23 @@ export const projectMembersApi = {
 
 // Analytics
 export const analyticsApi = {
-  getDashboard: () => api.get('/analytics/dashboard'),
-  getStatusDistribution: () => api.get('/analytics/status-distribution'),
-  getPriorityDistribution: () => api.get('/analytics/priority-distribution'),
-  getVelocity: () => api.get('/analytics/velocity'),
-  getMemberWorkload: () => api.get('/analytics/member-workload'),
+  getDashboard: () => api.get("/analytics/dashboard"),
+  getStatusDistribution: () => api.get("/analytics/status-distribution"),
+  getPriorityDistribution: () => api.get("/analytics/priority-distribution"),
+  getVelocity: () => api.get("/analytics/velocity"),
+  getMemberWorkload: () => api.get("/analytics/member-workload"),
   getRecentActivity: (limit?: number) =>
-    api.get('/analytics/recent-activity', { params: { limit } }),
-  getCompletionTrend: () => api.get('/analytics/completion-trend'),
+    api.get("/analytics/recent-activity", { params: { limit } }),
+  getCompletionTrend: () => api.get("/analytics/completion-trend"),
 };
 
 // Attachments
 export const attachmentsApi = {
-  getByTask: (taskId: string) =>
-    api.get(`/attachments?taskId=${taskId}`),
+  getByTask: (taskId: string) => api.get(`/attachments?taskId=${taskId}`),
 
   upload: (taskId: string, file: File) => {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
     return api.post(`/attachments/upload?taskId=${taskId}`, formData);
   },
 
@@ -207,28 +205,31 @@ export const attachmentsApi = {
 
   uploadAvatar: (file: File) => {
     const formData = new FormData();
-    formData.append('file', file);
-    return api.post('/attachments/avatar', formData);
+    formData.append("file", file);
+    return api.post("/attachments/avatar", formData);
   },
 };
 
 // Tasks Export
 export const tasksApi = {
   exportCsv: async (params?: Record<string, unknown>) => {
-    const response = await api.get('/tasks/export', {
+    const response = await api.get("/tasks/export", {
       params,
-      responseType: 'blob',
+      responseType: "blob",
     });
-    const blob = new Blob([response.data as BlobPart], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([response.data as BlobPart], {
+      type: "text/csv;charset=utf-8;",
+    });
     const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.setAttribute('download', `planforge-tasks-${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute(
+      "download",
+      `planforge-tasks-${new Date().toISOString().split("T")[0]}.csv`
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
   },
 };
-
-

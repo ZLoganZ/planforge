@@ -1,17 +1,23 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { AuditAction, NotificationType, Prisma, TaskStatus } from '@prisma/client';
-import { PrismaService } from '../../database/prisma.service.js';
-import type { PaginatedResult } from '../../common/dto/pagination-query.dto.js';
 import {
-  QueryTasksDto,
-  CreateTaskDto,
-  UpdateTaskDto,
-  ReorderTasksDto,
-  BulkUpdateTasksDto,
-} from './dto/tasks.dto.js';
+  AuditAction,
+  NotificationType,
+  Prisma,
+  TaskStatus,
+} from '@prisma/client';
+
+import type { PaginatedResult } from '../../common/dto/pagination-query.dto.js';
+import { PrismaService } from '../../database/prisma.service.js';
 import { AuditLogsService } from '../audit-logs/audit-logs.service.js';
-import { NotificationsService } from '../notifications/notifications.service.js';
 import { NotificationsGateway } from '../notifications/notifications.gateway.js';
+import { NotificationsService } from '../notifications/notifications.service.js';
+import {
+  BulkUpdateTasksDto,
+  CreateTaskDto,
+  QueryTasksDto,
+  ReorderTasksDto,
+  UpdateTaskDto,
+} from './dto/tasks.dto.js';
 
 @Injectable()
 export class TasksService {
@@ -63,7 +69,11 @@ export class TasksService {
       entityType: 'Task',
       entityId: createdTask.id,
       actorId: reporterId,
-      diff: { title: createdTask.title, status: createdTask.status, priority: createdTask.priority },
+      diff: {
+        title: createdTask.title,
+        status: createdTask.status,
+        priority: createdTask.priority,
+      },
       metadata: {
         taskKey: `${createdTask.project?.key || 'TASK'}-${createdTask.taskNumber}`,
         taskTitle: createdTask.title,
@@ -137,10 +147,20 @@ export class TasksService {
         where,
         include: {
           assignee: {
-            select: { id: true, firstName: true, lastName: true, avatarUrl: true },
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              avatarUrl: true,
+            },
           },
           reporter: {
-            select: { id: true, firstName: true, lastName: true, avatarUrl: true },
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              avatarUrl: true,
+            },
           },
           project: {
             select: { id: true, key: true, name: true },
@@ -181,10 +201,20 @@ export class TasksService {
       where: { id, deletedAt: null },
       include: {
         assignee: {
-          select: { id: true, firstName: true, lastName: true, avatarUrl: true },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
         },
         reporter: {
-          select: { id: true, firstName: true, lastName: true, avatarUrl: true },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
         },
         project: {
           select: { id: true, key: true, name: true },
@@ -248,34 +278,63 @@ export class TasksService {
     if (dto.priority && dto.priority !== previous.priority) {
       diff.priority = { from: previous.priority, to: dto.priority };
     }
-    if (dto.description !== undefined && dto.description !== previous.description) {
-      const prevDesc = previous.description ? (previous.description.length > 60 ? `${previous.description.slice(0, 60)}...` : previous.description) : 'None';
-      const newDesc = dto.description ? (dto.description.length > 60 ? `${dto.description.slice(0, 60)}...` : dto.description) : 'None';
+    if (
+      dto.description !== undefined &&
+      dto.description !== previous.description
+    ) {
+      const prevDesc = previous.description
+        ? previous.description.length > 60
+          ? `${previous.description.slice(0, 60)}...`
+          : previous.description
+        : 'None';
+      const newDesc = dto.description
+        ? dto.description.length > 60
+          ? `${dto.description.slice(0, 60)}...`
+          : dto.description
+        : 'None';
       diff.description = { from: prevDesc, to: newDesc };
     }
-    if (dto.storyPoints !== undefined && dto.storyPoints !== previous.storyPoints) {
+    if (
+      dto.storyPoints !== undefined &&
+      dto.storyPoints !== previous.storyPoints
+    ) {
       diff.storyPoints = {
         from: previous.storyPoints ?? 'None',
         to: dto.storyPoints ?? 'None',
       };
     }
     if (dto.dueDate !== undefined) {
-      const prevDate = previous.dueDate ? new Date(previous.dueDate).toISOString().slice(0, 10) : null;
-      const newDate = dto.dueDate ? new Date(dto.dueDate).toISOString().slice(0, 10) : null;
+      const prevDate = previous.dueDate
+        ? new Date(previous.dueDate).toISOString().slice(0, 10)
+        : null;
+      const newDate = dto.dueDate
+        ? new Date(dto.dueDate).toISOString().slice(0, 10)
+        : null;
       if (prevDate !== newDate) {
         diff.dueDate = { from: prevDate ?? 'None', to: newDate ?? 'None' };
       }
     }
     if (dto.startDate !== undefined) {
-      const prevDate = previous.startDate ? new Date(previous.startDate).toISOString().slice(0, 10) : null;
-      const newDate = dto.startDate ? new Date(dto.startDate).toISOString().slice(0, 10) : null;
+      const prevDate = previous.startDate
+        ? new Date(previous.startDate).toISOString().slice(0, 10)
+        : null;
+      const newDate = dto.startDate
+        ? new Date(dto.startDate).toISOString().slice(0, 10)
+        : null;
       if (prevDate !== newDate) {
         diff.startDate = { from: prevDate ?? 'None', to: newDate ?? 'None' };
       }
     }
-    if (dto.assigneeId !== undefined && dto.assigneeId !== previous.assigneeId) {
-      const prevName = previous.assignee ? `${previous.assignee.firstName} ${previous.assignee.lastName}` : 'Unassigned';
-      const newName = updated.assignee ? `${updated.assignee.firstName} ${updated.assignee.lastName}` : 'Unassigned';
+    if (
+      dto.assigneeId !== undefined &&
+      dto.assigneeId !== previous.assigneeId
+    ) {
+      const prevName = previous.assignee
+        ? `${previous.assignee.firstName} ${previous.assignee.lastName}`
+        : 'Unassigned';
+      const newName = updated.assignee
+        ? `${updated.assignee.firstName} ${updated.assignee.lastName}`
+        : 'Unassigned';
       diff.assignee = { from: prevName, to: newName };
     }
     if (dto.sprintId !== undefined && dto.sprintId !== previous.sprintId) {
@@ -284,8 +343,16 @@ export class TasksService {
       diff.sprint = { from: prevSprint, to: newSprint };
     }
     if (labelIds !== undefined) {
-      const prevLabels = previous.taskLabels.map((tl) => tl.label.name).sort().join(', ') || 'None';
-      const newLabels = updated.taskLabels.map((tl) => tl.label.name).sort().join(', ') || 'None';
+      const prevLabels =
+        previous.taskLabels
+          .map((tl) => tl.label.name)
+          .sort()
+          .join(', ') || 'None';
+      const newLabels =
+        updated.taskLabels
+          .map((tl) => tl.label.name)
+          .sort()
+          .join(', ') || 'None';
       if (prevLabels !== newLabels) {
         diff.labels = { from: prevLabels, to: newLabels };
       }
@@ -293,7 +360,10 @@ export class TasksService {
 
     if (Object.keys(diff).length > 0) {
       void this.auditLogsService.create({
-        action: dto.status && dto.status !== previous.status ? AuditAction.STATUS_CHANGE : AuditAction.UPDATE,
+        action:
+          dto.status && dto.status !== previous.status
+            ? AuditAction.STATUS_CHANGE
+            : AuditAction.UPDATE,
         entityType: 'Task',
         entityId: id,
         actorId: userId,
@@ -306,7 +376,11 @@ export class TasksService {
       });
     }
 
-    if (dto.assigneeId && dto.assigneeId !== previous.assigneeId && dto.assigneeId !== userId) {
+    if (
+      dto.assigneeId &&
+      dto.assigneeId !== previous.assigneeId &&
+      dto.assigneeId !== userId
+    ) {
       void this.notificationsService.create({
         userId: dto.assigneeId,
         type: NotificationType.TASK_ASSIGNED,
@@ -453,4 +527,3 @@ export class TasksService {
     });
   }
 }
-

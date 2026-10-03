@@ -1,5 +1,19 @@
 "use client";
 
+import { useState } from "react";
+import { formatDistanceToNow } from "date-fns";
+import {
+  Bell,
+  BellOff,
+  CheckCheck,
+  CheckCircle2,
+  Clock,
+  MessageSquare,
+  Play,
+  RefreshCw,
+  UserCheck,
+} from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -14,19 +28,6 @@ import {
   useUnreadNotificationsCount,
 } from "@/hooks/use-notifications";
 import { cn } from "@/lib/utils";
-import { formatDistanceToNow } from "date-fns";
-import {
-  Bell,
-  BellOff,
-  CheckCheck,
-  CheckCircle2,
-  Clock,
-  MessageSquare,
-  Play,
-  RefreshCw,
-  UserCheck,
-} from "lucide-react";
-import { useState } from "react";
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
@@ -133,7 +134,7 @@ export function NotificationBell() {
                 onClick={() => handleItemClick(item)}
                 className={cn(
                   "group flex cursor-pointer items-start gap-3 p-3.5 transition-colors hover:bg-accent/40",
-                  !item.isRead && "bg-primary/5",
+                  !item.isRead && "bg-primary/5"
                 )}
               >
                 <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-lg border border-border bg-card shadow-xs">
@@ -144,7 +145,7 @@ export function NotificationBell() {
                     <p
                       className={cn(
                         "truncate text-xs font-semibold",
-                        item.isRead ? "text-foreground/80" : "text-foreground",
+                        item.isRead ? "text-foreground/80" : "text-foreground"
                       )}
                     >
                       {item.title}

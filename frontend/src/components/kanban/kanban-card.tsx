@@ -1,13 +1,9 @@
-'use client';
+"use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Task } from '@/hooks/use-tasks';
-import { cn } from '@/lib/utils';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { format } from 'date-fns';
+import React from "react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { format } from "date-fns";
 import {
   ArrowDown,
   ArrowUp,
@@ -16,18 +12,23 @@ import {
   GripVertical,
   Layers,
   Minus,
-} from 'lucide-react';
-import React from 'react';
+} from "lucide-react";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Task } from "@/hooks/use-tasks";
+import { cn } from "@/lib/utils";
 
 function getPriorityIcon(priority: string) {
   switch (priority.toUpperCase()) {
-    case 'URGENT':
+    case "URGENT":
       return <Flame className="size-3.5 text-rose-500" />;
-    case 'HIGH':
+    case "HIGH":
       return <ArrowUp className="size-3.5 text-amber-500" />;
-    case 'MEDIUM':
+    case "MEDIUM":
       return <Minus className="size-3.5 text-yellow-500" />;
-    case 'LOW':
+    case "LOW":
       return <ArrowDown className="size-3.5 text-blue-500" />;
     default:
       return null;
@@ -46,7 +47,7 @@ export const KanbanCardView = React.memo(function KanbanCardView({
   onClick?: (task: Task) => void;
 }) {
   const assigneeInitials = task.assignee
-    ? `${task.assignee.firstName?.[0] || ''}${task.assignee.lastName?.[0] || ''}`.toUpperCase()
+    ? `${task.assignee.firstName?.[0] || ""}${task.assignee.lastName?.[0] || ""}`.toUpperCase()
     : null;
 
   return (
@@ -58,8 +59,9 @@ export const KanbanCardView = React.memo(function KanbanCardView({
         }
       }}
       className={cn(
-        'cursor-pointer overflow-hidden rounded-lg border border-border/70 bg-card py-0 transition-colors select-none hover:border-primary/40 hover:shadow-xs',
-        isOverlay && 'cursor-grabbing border-primary bg-card/95 shadow-xl ring-2 ring-primary/40 backdrop-blur-md'
+        "cursor-pointer overflow-hidden rounded-lg border border-border/70 bg-card py-0 transition-colors select-none hover:border-primary/40 hover:shadow-xs",
+        isOverlay &&
+          "cursor-grabbing border-primary bg-card/95 shadow-xl ring-2 ring-primary/40 backdrop-blur-md"
       )}
     >
       <CardContent className="space-y-2.5 p-3.5">
@@ -71,7 +73,7 @@ export const KanbanCardView = React.memo(function KanbanCardView({
                 ? `${task.project.key}-${task.taskNumber}`
                 : `PF-${task.taskNumber}`}
             </span>
-            {task.priority && task.priority !== 'NONE' && (
+            {task.priority && task.priority !== "NONE" && (
               <span
                 className="flex items-center gap-0.5 rounded bg-muted/60 px-1 py-0.5"
                 title={`Priority: ${task.priority}`}
@@ -139,10 +141,10 @@ export const KanbanCardView = React.memo(function KanbanCardView({
             {task.dueDate && (
               <span
                 className="flex shrink-0 items-center gap-1"
-                title={`Due: ${format(new Date(task.dueDate), 'MMM d, yyyy')}`}
+                title={`Due: ${format(new Date(task.dueDate), "MMM d, yyyy")}`}
               >
                 <Calendar className="size-3" />
-                <span>{format(new Date(task.dueDate), 'MMM d')}</span>
+                <span>{format(new Date(task.dueDate), "MMM d")}</span>
               </span>
             )}
           </div>
@@ -205,7 +207,7 @@ export const KanbanCard = React.memo(function KanbanCard({
     id: task.id,
     disabled: isOverlay,
     data: {
-      type: 'Task',
+      type: "Task",
       task,
     },
   });
@@ -224,11 +226,16 @@ export const KanbanCard = React.memo(function KanbanCard({
       {...attributes}
       {...listeners}
       className={cn(
-        'group relative cursor-grab touch-none will-change-transform select-none active:cursor-grabbing',
-        isDragging && 'opacity-25',
+        "group relative cursor-grab touch-none will-change-transform select-none active:cursor-grabbing",
+        isDragging && "opacity-25"
       )}
     >
-      <KanbanCardView task={task} isOverlay={isOverlay} isDragging={isDragging} onClick={onClick} />
+      <KanbanCardView
+        task={task}
+        isOverlay={isOverlay}
+        isDragging={isDragging}
+        onClick={onClick}
+      />
     </div>
   );
 });

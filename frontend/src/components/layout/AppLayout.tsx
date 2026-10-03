@@ -1,8 +1,10 @@
 "use client";
 
-import { useAuth } from "@/context/auth-context";
-import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+import { useAuth } from "@/context/auth-context";
+
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 

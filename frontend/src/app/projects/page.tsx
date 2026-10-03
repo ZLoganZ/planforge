@@ -1,11 +1,6 @@
 "use client";
 
-import { AppLayout } from "@/components/layout/AppLayout";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useProjects } from "@/hooks/use-projects";
+import Link from "next/link";
 import {
   ArrowRight,
   CheckSquare,
@@ -13,7 +8,13 @@ import {
   Layers,
   Users,
 } from "lucide-react";
-import Link from "next/link";
+
+import { AppLayout } from "@/components/layout/AppLayout";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useProjects } from "@/hooks/use-projects";
 
 export default function ProjectsPage() {
   const { data: response, isLoading } = useProjects();

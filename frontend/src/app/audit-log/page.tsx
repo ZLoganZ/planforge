@@ -1,16 +1,6 @@
 "use client";
 
-import { AppLayout } from "@/components/layout/AppLayout";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  AuditLogItem,
-  useAuditLogs,
-  useAuditLogStats,
-} from "@/hooks/use-audit-logs";
-import { cn } from "@/lib/utils";
+import { useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   Activity,
@@ -26,7 +16,18 @@ import {
   ShieldCheck,
   TrendingUp,
 } from "lucide-react";
-import { useState } from "react";
+
+import { AppLayout } from "@/components/layout/AppLayout";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  AuditLogItem,
+  useAuditLogs,
+  useAuditLogStats,
+} from "@/hooks/use-audit-logs";
+import { cn } from "@/lib/utils";
 
 export default function AuditLogPage() {
   const [search, setSearch] = useState("");
@@ -263,10 +264,10 @@ export default function AuditLogPage() {
               {logs.map((log) => {
                 const isExpanded = expandedLogId === log.id;
                 const hasDiff = Boolean(
-                  log.diff && Object.keys(log.diff).length > 0,
+                  log.diff && Object.keys(log.diff).length > 0
                 );
                 const hasMetadata = Boolean(
-                  log.metadata && Object.keys(log.metadata).length > 0,
+                  log.metadata && Object.keys(log.metadata).length > 0
                 );
                 const canExpand = hasDiff || hasMetadata;
 
@@ -311,8 +312,7 @@ export default function AuditLogPage() {
                   (log.metadata?.taskTitle as string | undefined) ||
                   (log.diff?.title && typeof log.diff.title === "object"
                     ? ((log.diff.title as Record<string, unknown>)?.to as
-                        | string
-                        | undefined)
+                        string | undefined)
                     : (log.diff?.title as string | undefined));
 
                 return (
@@ -377,7 +377,7 @@ export default function AuditLogPage() {
                           <p className="text-[10px] text-muted-foreground">
                             {format(
                               new Date(log.createdAt),
-                              "MMM d, yyyy • HH:mm:ss",
+                              "MMM d, yyyy • HH:mm:ss"
                             )}
                           </p>
                         </div>
@@ -421,7 +421,7 @@ export default function AuditLogPage() {
                               log.diff as Record<
                                 string,
                                 { from?: unknown; to?: unknown } | unknown
-                              >,
+                              >
                             ).map(([key, val]) => {
                               const isDiffObj =
                                 val &&
@@ -429,7 +429,7 @@ export default function AuditLogPage() {
                                 ("from" in val || "to" in val);
                               const fromVal = isDiffObj
                                 ? String(
-                                    (val as { from?: unknown }).from ?? "none",
+                                    (val as { from?: unknown }).from ?? "none"
                                   )
                                 : "";
                               const toVal = isDiffObj
@@ -472,7 +472,7 @@ export default function AuditLogPage() {
                         {hasMetadata && (
                           <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-border/40 pt-2 text-[11px] text-muted-foreground">
                             {Object.entries(
-                              log.metadata as Record<string, unknown>,
+                              log.metadata as Record<string, unknown>
                             ).map(([k, v]) => (
                               <span
                                 key={k}

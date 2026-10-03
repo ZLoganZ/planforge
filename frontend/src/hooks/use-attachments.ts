@@ -1,5 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { attachmentsApi } from '@/lib/api';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { attachmentsApi } from "@/lib/api";
 
 export interface Attachment {
   id: string;
@@ -13,7 +14,7 @@ export interface Attachment {
 
 export function useAttachments(taskId?: string) {
   return useQuery<Attachment[]>({
-    queryKey: ['attachments', taskId],
+    queryKey: ["attachments", taskId],
     queryFn: async () => {
       if (!taskId) return [];
       const res = await attachmentsApi.getByTask(taskId);
@@ -32,8 +33,10 @@ export function useUploadAttachment() {
       return res.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['attachments', variables.taskId] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({
+        queryKey: ["attachments", variables.taskId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 }
@@ -47,8 +50,10 @@ export function useDeleteAttachment() {
       return res.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['attachments', variables.taskId] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({
+        queryKey: ["attachments", variables.taskId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 }
@@ -59,11 +64,11 @@ export async function downloadAttachment(id: string, fileName: string) {
 
   try {
     const response = await fetch(downloadUrl);
-    if (!response.ok) throw new Error('Download request failed');
+    if (!response.ok) throw new Error("Download request failed");
     const blob = await response.blob();
     const blobUrl = window.URL.createObjectURL(blob);
 
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = blobUrl;
     a.download = fileName;
     document.body.appendChild(a);
@@ -72,7 +77,7 @@ export async function downloadAttachment(id: string, fileName: string) {
     window.URL.revokeObjectURL(blobUrl);
   } catch {
     // Direct trigger fallback
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = downloadUrl;
     a.download = fileName;
     document.body.appendChild(a);

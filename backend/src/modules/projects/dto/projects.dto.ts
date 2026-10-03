@@ -1,6 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import { Role } from '@prisma/client';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
+
 import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto.js';
 
 export class QueryProjectsDto extends PaginationQueryDto {
@@ -75,4 +82,3 @@ export class UpdateProjectMemberDto {
   @IsEnum(Role)
   role!: Role;
 }
-

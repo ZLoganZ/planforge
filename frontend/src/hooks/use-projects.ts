@@ -1,5 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { api } from "@/lib/api";
 
 export interface Project {
   id: string;
@@ -30,13 +31,15 @@ export interface ProjectsResponse {
 
 export function useProjects(workspaceId?: string) {
   return useQuery({
-    queryKey: ['projects', { workspaceId }],
+    queryKey: ["projects", { workspaceId }],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (workspaceId) params.append('workspaceId', workspaceId);
-      params.append('limit', '50');
+      if (workspaceId) params.append("workspaceId", workspaceId);
+      params.append("limit", "50");
 
-      const { data } = await api.get<ProjectsResponse>(`/projects?${params.toString()}`);
+      const { data } = await api.get<ProjectsResponse>(
+        `/projects?${params.toString()}`
+      );
       return data;
     },
   });
@@ -44,7 +47,7 @@ export function useProjects(workspaceId?: string) {
 
 export function useProject(id: string) {
   return useQuery({
-    queryKey: ['project', id],
+    queryKey: ["project", id],
     queryFn: async () => {
       const { data } = await api.get<Project>(`/projects/${id}`);
       return data;
@@ -57,12 +60,18 @@ export function useCreateProject() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: { name: string; key: string; description?: string; color?: string; workspaceId: string }) => {
-      const { data } = await api.post<Project>('/projects', payload);
+    mutationFn: async (payload: {
+      name: string;
+      key: string;
+      description?: string;
+      color?: string;
+      workspaceId: string;
+    }) => {
+      const { data } = await api.post<Project>("/projects", payload);
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
     },
   });
 }

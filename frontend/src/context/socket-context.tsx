@@ -1,9 +1,17 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
-import { io, Socket } from 'socket.io-client';
-import { useQueryClient } from '@tanstack/react-query';
-import { useAuth } from './auth-context';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { io, Socket } from "socket.io-client";
+
+import { useAuth } from "./auth-context";
 
 interface SocketContextType {
   isConnected: boolean;
@@ -34,34 +42,36 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const socketUrl = process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:4001';
+    const socketUrl = process.env.NEXT_PUBLIC_WS_URL || "http://localhost:4001";
     const socketInstance = io(socketUrl, {
-      transports: ['websocket', 'polling'],
+      transports: ["websocket", "polling"],
       autoConnect: true,
     });
 
     socketRef.current = socketInstance;
 
-    socketInstance.on('connect', () => {
+    socketInstance.on("connect", () => {
       setIsConnected(true);
-      socketInstance.emit('join:user', { userId: user.id });
+      socketInstance.emit("join:user", { userId: user.id });
     });
 
-    socketInstance.on('disconnect', () => {
+    socketInstance.on("disconnect", () => {
       setIsConnected(false);
     });
 
-    socketInstance.on('notification:new', () => {
-      void queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      void queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
+    socketInstance.on("notification:new", () => {
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["notifications-unread-count"],
+      });
     });
 
-    socketInstance.on('task:updated', () => {
-      void queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      void queryClient.invalidateQueries({ queryKey: ['task'] });
-      void queryClient.invalidateQueries({ queryKey: ['sprints'] });
-      void queryClient.invalidateQueries({ queryKey: ['projects'] });
-      void queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+    socketInstance.on("task:updated", () => {
+      void queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      void queryClient.invalidateQueries({ queryKey: ["task"] });
+      void queryClient.invalidateQueries({ queryKey: ["sprints"] });
+      void queryClient.invalidateQueries({ queryKey: ["projects"] });
+      void queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
     });
 
     return () => {
@@ -72,13 +82,13 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
   const joinProject = useCallback((projectId: string) => {
     if (socketRef.current && projectId) {
-      socketRef.current.emit('join:project', { projectId });
+      socketRef.current.emit("join:project", { projectId });
     }
   }, []);
 
   const leaveProject = useCallback((projectId: string) => {
     if (socketRef.current && projectId) {
-      socketRef.current.emit('leave:project', { projectId });
+      socketRef.current.emit("leave:project", { projectId });
     }
   }, []);
 

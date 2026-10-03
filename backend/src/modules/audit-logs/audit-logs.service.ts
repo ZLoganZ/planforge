@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../database/prisma.service.js';
+
 import type { PaginatedResult } from '../../common/dto/pagination-query.dto.js';
+import { PrismaService } from '../../database/prisma.service.js';
 import { CreateAuditLogDto, QueryAuditLogsDto } from './dto/audit-logs.dto.js';
 
 @Injectable()
@@ -40,7 +41,9 @@ export class AuditLogsService {
 
     const where: Prisma.AuditLogWhereInput = {
       ...(action && { action }),
-      ...(entityType && { entityType: { equals: entityType, mode: 'insensitive' } }),
+      ...(entityType && {
+        entityType: { equals: entityType, mode: 'insensitive' },
+      }),
       ...(entityId && { entityId }),
       ...(actorId && { actorId }),
       ...(startDate && { createdAt: { gte: new Date(startDate) } }),
@@ -117,8 +120,14 @@ export class AuditLogsService {
 
     return {
       totalLogs,
-      byAction: actionCounts.map((a) => ({ action: a.action, count: a._count.action })),
-      byEntity: entityCounts.map((e) => ({ entity: e.entityType, count: e._count.entityType })),
+      byAction: actionCounts.map((a) => ({
+        action: a.action,
+        count: a._count.action,
+      })),
+      byEntity: entityCounts.map((e) => ({
+        entity: e.entityType,
+        count: e._count.entityType,
+      })),
     };
   }
 }
@@ -215,15 +224,17 @@ export async function enrichAuditLogs(
           (meta.taskTitle as string | undefined) ||
           (meta.title as string | undefined) ||
           (diff.title && typeof diff.title === 'object'
-            ? ((diff.title as Record<string, unknown>)?.to as string | undefined) ||
-              ((diff.title as Record<string, unknown>)?.from as string | undefined)
+            ? ((diff.title as Record<string, unknown>)?.to as
+                string | undefined) ||
+              ((diff.title as Record<string, unknown>)?.from as
+                string | undefined)
             : (diff.title as string | undefined));
         const key = (meta.taskKey as string | undefined) || undefined;
         entityDetails = {
           title: typeof title === 'string' ? title : undefined,
           key,
           projectName: (meta.projectName as string | undefined) || undefined,
-          name: key && title ? `${key}: ${title}` : (key || title || 'Task'),
+          name: key && title ? `${key}: ${title}` : key || title || 'Task',
         };
       }
     } else if (item.entityType?.toLowerCase() === 'project') {

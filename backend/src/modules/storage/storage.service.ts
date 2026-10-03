@@ -1,17 +1,18 @@
+import { randomUUID } from 'crypto';
+import { extname } from 'path';
+
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
-  S3Client,
-  PutObjectCommand,
-  DeleteObjectCommand,
-  HeadBucketCommand,
   CreateBucketCommand,
-  PutBucketPolicyCommand,
+  DeleteObjectCommand,
   GetObjectCommand,
+  HeadBucketCommand,
+  PutBucketPolicyCommand,
+  PutObjectCommand,
+  S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { randomUUID } from 'crypto';
-import { extname } from 'path';
 
 @Injectable()
 export class StorageService implements OnModuleInit {
@@ -103,7 +104,11 @@ export class StorageService implements OnModuleInit {
    * Generate a pre-signed download URL (valid for 1 hour).
    * Sets ResponseContentDisposition to force browser download instead of tab navigation.
    */
-  async getSignedUrl(key: string, fileName?: string, expiresIn = 3600): Promise<string> {
+  async getSignedUrl(
+    key: string,
+    fileName?: string,
+    expiresIn = 3600,
+  ): Promise<string> {
     const command = new GetObjectCommand({
       Bucket: this.bucket,
       Key: key,

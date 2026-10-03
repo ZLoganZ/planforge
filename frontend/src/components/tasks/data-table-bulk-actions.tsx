@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { Table } from '@tanstack/react-table';
-import { Task, useBulkUpdateTasks, useBulkDeleteTasks } from '@/hooks/use-tasks';
-import { useSprints } from '@/hooks/use-sprints';
-import { Button } from '@/components/ui/button';
+import * as React from "react";
+import { Table } from "@tanstack/react-table";
+import { CheckCircle2, Layers, Tag, Trash2, X } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,8 +12,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { CheckCircle2, Tag, Layers, Trash2, X } from 'lucide-react';
+} from "@/components/ui/dropdown-menu";
+import { useSprints } from "@/hooks/use-sprints";
+import {
+  Task,
+  useBulkDeleteTasks,
+  useBulkUpdateTasks,
+} from "@/hooks/use-tasks";
 
 interface DataTableBulkActionsProps {
   table: Table<Task>;
@@ -32,7 +37,9 @@ export function DataTableBulkActions({ table }: DataTableBulkActionsProps) {
   );
 
   // Retrieve project id from selected tasks if uniform
-  const projectId = selectedRows[0]?.original?.projectId || selectedRows[0]?.original?.project?.id;
+  const projectId =
+    selectedRows[0]?.original?.projectId ||
+    selectedRows[0]?.original?.project?.id;
   const { data: sprints } = useSprints({ projectId });
 
   if (selectedCount === 0) return null;
@@ -77,7 +84,7 @@ export function DataTableBulkActions({ table }: DataTableBulkActionsProps) {
           {selectedCount}
         </span>
         <span className="text-xs font-medium whitespace-nowrap text-foreground">
-          {selectedCount === 1 ? 'task selected' : 'tasks selected'}
+          {selectedCount === 1 ? "task selected" : "tasks selected"}
         </span>
       </div>
 
@@ -85,38 +92,70 @@ export function DataTableBulkActions({ table }: DataTableBulkActionsProps) {
         {/* Status Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8 gap-1.5 bg-card text-xs">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 bg-card text-xs"
+            >
               <CheckCircle2 className="size-3.5 text-muted-foreground" />
               Change Status
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel className="text-xs">Select Status</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-xs">
+              Select Status
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => handleStatusChange('BACKLOG')}>Backlog</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleStatusChange('TODO')}>To Do</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleStatusChange('IN_PROGRESS')}>In Progress</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleStatusChange('IN_REVIEW')}>In Review</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleStatusChange('DONE')}>Done</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleStatusChange("BACKLOG")}>
+              Backlog
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleStatusChange("TODO")}>
+              To Do
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleStatusChange("IN_PROGRESS")}>
+              In Progress
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleStatusChange("IN_REVIEW")}>
+              In Review
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleStatusChange("DONE")}>
+              Done
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
         {/* Priority Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8 gap-1.5 bg-card text-xs">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 bg-card text-xs"
+            >
               <Tag className="size-3.5 text-muted-foreground" />
               Set Priority
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel className="text-xs">Select Priority</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-xs">
+              Select Priority
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => handlePriorityChange('URGENT')}>Urgent</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handlePriorityChange('HIGH')}>High</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handlePriorityChange('MEDIUM')}>Medium</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handlePriorityChange('LOW')}>Low</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handlePriorityChange('NONE')}>None</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handlePriorityChange("URGENT")}>
+              Urgent
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handlePriorityChange("HIGH")}>
+              High
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handlePriorityChange("MEDIUM")}>
+              Medium
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handlePriorityChange("LOW")}>
+              Low
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handlePriorityChange("NONE")}>
+              None
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -124,13 +163,19 @@ export function DataTableBulkActions({ table }: DataTableBulkActionsProps) {
         {sprints && sprints.length > 0 && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 gap-1.5 bg-card text-xs">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 bg-card text-xs"
+              >
                 <Layers className="size-3.5 text-muted-foreground" />
                 Assign Sprint
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel className="text-xs">Assign to Sprint</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-xs">
+                Assign to Sprint
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => handleSprintChange(null)}>
                 None (Backlog)
@@ -140,7 +185,7 @@ export function DataTableBulkActions({ table }: DataTableBulkActionsProps) {
                   key={sprint.id}
                   onClick={() => handleSprintChange(sprint.id)}
                 >
-                  {sprint.name} {sprint.status === 'ACTIVE' ? '🟢' : ''}
+                  {sprint.name} {sprint.status === "ACTIVE" ? "🟢" : ""}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>

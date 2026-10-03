@@ -1,15 +1,16 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { DataTable } from '@/components/tasks/data-table';
-import { columns } from '@/components/tasks/columns';
-import { TaskCreateModal } from '@/components/tasks/task-create-modal';
-import { useTasks } from '@/hooks/use-tasks';
-import { ListTodo, Download, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { tasksApi } from '@/lib/api';
+import React, { useState } from "react";
+import { Download, ListTodo, Loader2 } from "lucide-react";
+
+import { AppLayout } from "@/components/layout/AppLayout";
+import { columns } from "@/components/tasks/columns";
+import { DataTable } from "@/components/tasks/data-table";
+import { TaskCreateModal } from "@/components/tasks/task-create-modal";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useTasks } from "@/hooks/use-tasks";
+import { tasksApi } from "@/lib/api";
 
 export default function TasksPage() {
   const { data: response, isLoading } = useTasks({ limit: 50 });
@@ -20,7 +21,7 @@ export default function TasksPage() {
       setIsExporting(true);
       await tasksApi.exportCsv();
     } catch (err) {
-      console.error('Failed to export tasks CSV:', err);
+      console.error("Failed to export tasks CSV:", err);
     } finally {
       setIsExporting(false);
     }

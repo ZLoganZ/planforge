@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { useCreateTask } from '@/hooks/use-tasks';
+import * as React from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -21,22 +21,22 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
+import { useCreateTask } from "@/hooks/use-tasks";
 
 const taskSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(100),
+  title: z.string().min(1, "Title is required").max(100),
   description: z.string().optional(),
-  status: z.enum(['BACKLOG', 'TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE']),
-  priority: z.enum(['URGENT', 'HIGH', 'MEDIUM', 'LOW', 'NONE']),
+  status: z.enum(["BACKLOG", "TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"]),
+  priority: z.enum(["URGENT", "HIGH", "MEDIUM", "LOW", "NONE"]),
   storyPoints: z.number().min(0).optional(),
 });
 
@@ -53,47 +53,58 @@ interface TaskCreateModalProps {
 export function TaskCreateModal({
   children,
   projectId,
-  defaultStatus = 'TODO',
+  defaultStatus = "TODO",
   open: controlledOpen,
   onOpenChange: setControlledOpen,
 }: TaskCreateModalProps) {
   const [uncontrolledOpen, setUncontrolledOpen] = React.useState(false);
-  const isOpen = controlledOpen !== undefined ? controlledOpen : uncontrolledOpen;
+  const isOpen =
+    controlledOpen !== undefined ? controlledOpen : uncontrolledOpen;
   const setIsOpen = setControlledOpen || setUncontrolledOpen;
 
   const { mutateAsync: createTask, isPending } = useCreateTask();
 
-  const validStatus = (['BACKLOG', 'TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE'].includes(defaultStatus)
-    ? defaultStatus
-    : 'TODO') as 'BACKLOG' | 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE';
+  const validStatus = (
+    ["BACKLOG", "TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"].includes(
+      defaultStatus
+    )
+      ? defaultStatus
+      : "TODO"
+  ) as "BACKLOG" | "TODO" | "IN_PROGRESS" | "IN_REVIEW" | "DONE";
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
-      title: '',
-      description: '',
+      title: "",
+      description: "",
       status: validStatus,
-      priority: 'MEDIUM',
+      priority: "MEDIUM",
       storyPoints: 0,
     },
   });
 
   React.useEffect(() => {
     if (defaultStatus) {
-      const statusValue = (['BACKLOG', 'TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE'].includes(defaultStatus)
-        ? defaultStatus
-        : 'TODO') as 'BACKLOG' | 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE';
-      form.setValue('status', statusValue);
+      const statusValue = (
+        ["BACKLOG", "TODO", "IN_PROGRESS", "IN_REVIEW", "DONE"].includes(
+          defaultStatus
+        )
+          ? defaultStatus
+          : "TODO"
+      ) as "BACKLOG" | "TODO" | "IN_PROGRESS" | "IN_REVIEW" | "DONE";
+      form.setValue("status", statusValue);
     }
   }, [defaultStatus, form]);
 
   const onSubmit = async (data: TaskFormValues) => {
     try {
-      await createTask({ ...data, projectId } as unknown as Parameters<typeof createTask>[0]);
+      await createTask({ ...data, projectId } as unknown as Parameters<
+        typeof createTask
+      >[0]);
       setIsOpen(false);
       form.reset();
     } catch (error) {
-      console.error('Failed to create task', error);
+      console.error("Failed to create task", error);
     }
   };
 
@@ -122,7 +133,7 @@ export function TaskCreateModal({
                 </FormItem>
               )}
             />
-            
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -130,7 +141,10 @@ export function TaskCreateModal({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select status" />
@@ -148,14 +162,17 @@ export function TaskCreateModal({
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={form.control}
                 name="priority"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Priority</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select priority" />
@@ -182,7 +199,16 @@ export function TaskCreateModal({
                 <FormItem>
                   <FormLabel>Story Points</FormLabel>
                   <FormControl>
-                    <Input type="number" min="0" {...field} onChange={e => field.onChange(e.target.value ? Number(e.target.value) : undefined)} />
+                    <Input
+                      type="number"
+                      min="0"
+                      {...field}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value ? Number(e.target.value) : undefined
+                        )
+                      }
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -198,7 +224,7 @@ export function TaskCreateModal({
                 Cancel
               </Button>
               <Button type="submit" disabled={isPending}>
-                {isPending ? 'Creating...' : 'Create Task'}
+                {isPending ? "Creating..." : "Create Task"}
               </Button>
             </div>
           </form>

@@ -1,20 +1,22 @@
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import { ThemeProvider } from 'next-themes';
-import { AuthProvider } from '@/context/auth-context';
-import { SocketProvider } from '@/context/socket-context';
-import { QueryProvider } from '@/lib/query-provider';
-import './globals.css';
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import { ThemeProvider } from "next-themes";
+
+import { AuthProvider } from "@/context/auth-context";
+import { SocketProvider } from "@/context/socket-context";
+import { QueryProvider } from "@/lib/query-provider";
+
+import "./globals.css";
 
 const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
+  subsets: ["latin"],
+  variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
-  title: 'PlanForge — Project Management & Task Tracker',
+  title: "PlanForge — Project Management & Task Tracker",
   description:
-    'Enterprise-grade project management platform with Kanban boards, sprint planning, analytics dashboards, and real-time collaboration.',
+    "Enterprise-grade project management platform with Kanban boards, sprint planning, analytics dashboards, and real-time collaboration.",
 };
 
 export default function RootLayout({

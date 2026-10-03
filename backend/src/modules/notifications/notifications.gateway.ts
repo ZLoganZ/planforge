@@ -1,21 +1,23 @@
+import { Logger } from '@nestjs/common';
 import {
-  WebSocketGateway,
-  WebSocketServer,
-  SubscribeMessage,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
   ConnectedSocket,
   MessageBody,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger } from '@nestjs/common';
 
 @WebSocketGateway({
   cors: {
     origin: '*',
   },
 })
-export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class NotificationsGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server!: Server;
 

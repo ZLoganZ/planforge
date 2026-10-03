@@ -1,7 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, SprintStatus } from '@prisma/client';
+
 import { PrismaService } from '../../database/prisma.service.js';
-import { CreateSprintDto, QuerySprintsDto, UpdateSprintDto } from './dto/sprints.dto.js';
+import {
+  CreateSprintDto,
+  QuerySprintsDto,
+  UpdateSprintDto,
+} from './dto/sprints.dto.js';
 
 @Injectable()
 export class SprintsService {
@@ -13,7 +18,9 @@ export class SprintsService {
     });
 
     if (!project) {
-      throw new NotFoundException(`Project with ID "${dto.projectId}" not found`);
+      throw new NotFoundException(
+        `Project with ID "${dto.projectId}" not found`,
+      );
     }
 
     return this.prisma.sprint.create({
@@ -63,11 +70,16 @@ export class SprintsService {
 
     // Augment with computed metrics
     return sprints.map((sprint) => {
-      const totalPoints = sprint.tasks.reduce((acc, t) => acc + (t.storyPoints || 0), 0);
+      const totalPoints = sprint.tasks.reduce(
+        (acc, t) => acc + (t.storyPoints || 0),
+        0,
+      );
       const completedPoints = sprint.tasks
         .filter((t) => t.status === 'DONE')
         .reduce((acc, t) => acc + (t.storyPoints || 0), 0);
-      const completedTasks = sprint.tasks.filter((t) => t.status === 'DONE').length;
+      const completedTasks = sprint.tasks.filter(
+        (t) => t.status === 'DONE',
+      ).length;
 
       return {
         id: sprint.id,
@@ -99,7 +111,12 @@ export class SprintsService {
           where: { deletedAt: null },
           include: {
             assignee: {
-              select: { id: true, firstName: true, lastName: true, avatarUrl: true },
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                avatarUrl: true,
+              },
             },
             taskLabels: {
               include: { label: true },
@@ -114,11 +131,16 @@ export class SprintsService {
       throw new NotFoundException(`Sprint with ID "${id}" not found`);
     }
 
-    const totalPoints = sprint.tasks.reduce((acc, t) => acc + (t.storyPoints || 0), 0);
+    const totalPoints = sprint.tasks.reduce(
+      (acc, t) => acc + (t.storyPoints || 0),
+      0,
+    );
     const completedPoints = sprint.tasks
       .filter((t) => t.status === 'DONE')
       .reduce((acc, t) => acc + (t.storyPoints || 0), 0);
-    const completedTasks = sprint.tasks.filter((t) => t.status === 'DONE').length;
+    const completedTasks = sprint.tasks.filter(
+      (t) => t.status === 'DONE',
+    ).length;
 
     return {
       ...sprint,
@@ -186,7 +208,9 @@ export class SprintsService {
         where: { id },
       });
 
-      return { message: `Sprint "${id}" deleted and associated tasks returned to backlog` };
+      return {
+        message: `Sprint "${id}" deleted and associated tasks returned to backlog`,
+      };
     });
   }
 }

@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
-import { TasksController } from './tasks.controller.js';
-import { TasksService } from './tasks.service.js';
+
 import { AuditLogsModule } from '../audit-logs/audit-logs.module.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
+import { TasksController } from './tasks.controller.js';
+import { TasksService } from './tasks.service.js';
 
 @Module({
   imports: [AuditLogsModule, NotificationsModule],
@@ -11,4 +12,3 @@ import { NotificationsModule } from '../notifications/notifications.module.js';
   exports: [TasksService],
 })
 export class TasksModule {}
-

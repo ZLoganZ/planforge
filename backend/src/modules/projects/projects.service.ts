@@ -1,12 +1,17 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../database/prisma.service.js';
-import type { PaginatedResult } from '../../common/dto/pagination-query.dto.js';
 import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+
+import type { PaginatedResult } from '../../common/dto/pagination-query.dto.js';
+import { PrismaService } from '../../database/prisma.service.js';
+import {
+  AddProjectMemberDto,
   CreateProjectDto,
   QueryProjectsDto,
   UpdateProjectDto,
-  AddProjectMemberDto,
   UpdateProjectMemberDto,
 } from './dto/projects.dto.js';
 
@@ -25,7 +30,9 @@ export class ProjectsService {
     });
 
     if (existing) {
-      throw new ConflictException(`Project key "${dto.key}" is already in use within this workspace`);
+      throw new ConflictException(
+        `Project key "${dto.key}" is already in use within this workspace`,
+      );
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -46,7 +53,14 @@ export class ProjectsService {
   }
 
   async findAll(query: QueryProjectsDto): Promise<PaginatedResult<any>> {
-    const { page = 1, limit = 20, search, sortBy = 'createdAt', sortOrder = 'desc', workspaceId } = query;
+    const {
+      page = 1,
+      limit = 20,
+      search,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      workspaceId,
+    } = query;
 
     const where: Prisma.ProjectWhereInput = {
       ...(workspaceId && { workspaceId }),
@@ -95,7 +109,15 @@ export class ProjectsService {
         workspace: { select: { id: true, name: true, slug: true } },
         members: {
           include: {
-            user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true, email: true } },
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                avatarUrl: true,
+                email: true,
+              },
+            },
           },
         },
       },
@@ -191,7 +213,11 @@ export class ProjectsService {
     });
   }
 
-  async updateMemberRole(projectId: string, userId: string, dto: UpdateProjectMemberDto) {
+  async updateMemberRole(
+    projectId: string,
+    userId: string,
+    dto: UpdateProjectMemberDto,
+  ) {
     const member = await this.prisma.projectMember.findUnique({
       where: {
         projectId_userId: {
@@ -254,4 +280,3 @@ export class ProjectsService {
     return { message: 'Member removed from project' };
   }
 }
-

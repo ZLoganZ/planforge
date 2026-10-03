@@ -1,15 +1,16 @@
 import {
-  Controller,
-  Get,
-  Patch,
-  Delete,
-  Param,
-  Query,
   Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { UsersService } from './users.service.js';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+
 import { QueryUsersDto, UpdateUserDto } from './dto/users.dto.js';
+import { UsersService } from './users.service.js';
 
 @ApiTags('Users')
 @ApiBearerAuth('JWT-auth')

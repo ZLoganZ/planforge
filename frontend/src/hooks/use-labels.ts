@@ -1,4 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { api } from "@/lib/api";
 
 export interface Label {
@@ -36,7 +37,9 @@ export function useCreateLabel() {
       return data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["labels", variables.projectId] });
+      queryClient.invalidateQueries({
+        queryKey: ["labels", variables.projectId],
+      });
     },
   });
 }

@@ -1,7 +1,21 @@
-import { Controller, Get, Post, Patch, Delete, Param, Query, Body } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+
+import {
+  CreateSprintDto,
+  QuerySprintsDto,
+  UpdateSprintDto,
+} from './dto/sprints.dto.js';
 import { SprintsService } from './sprints.service.js';
-import { CreateSprintDto, QuerySprintsDto, UpdateSprintDto } from './dto/sprints.dto.js';
 
 @ApiTags('Sprints')
 @ApiBearerAuth('JWT-auth')

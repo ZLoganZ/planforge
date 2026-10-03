@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+
 import { PrismaService } from '../../database/prisma.service.js';
 import { enrichAuditLogs } from '../audit-logs/audit-logs.service.js';
 
@@ -14,35 +15,45 @@ export class AnalyticsService {
     const weekAgo = new Date(now);
     weekAgo.setDate(weekAgo.getDate() - 7);
 
-    const [totalTasks, inProgress, completedThisWeek, overdue, totalProjects, totalMembers] =
-      await Promise.all([
-        this.prisma.task.count({
-          where: { deletedAt: null },
-        }),
-        this.prisma.task.count({
-          where: { status: 'IN_PROGRESS', deletedAt: null },
-        }),
-        this.prisma.task.count({
-          where: {
-            status: 'DONE',
-            completedAt: { gte: weekAgo },
-            deletedAt: null,
-          },
-        }),
-        this.prisma.task.count({
-          where: {
-            dueDate: { lt: now },
-            status: { notIn: ['DONE', 'CANCELLED'] },
-            deletedAt: null,
-          },
-        }),
-        this.prisma.project.count(),
-        this.prisma.user.count({ where: { isActive: true, deletedAt: null } }),
-      ]);
+    const [
+      totalTasks,
+      inProgress,
+      completedThisWeek,
+      overdue,
+      totalProjects,
+      totalMembers,
+    ] = await Promise.all([
+      this.prisma.task.count({
+        where: { deletedAt: null },
+      }),
+      this.prisma.task.count({
+        where: { status: 'IN_PROGRESS', deletedAt: null },
+      }),
+      this.prisma.task.count({
+        where: {
+          status: 'DONE',
+          completedAt: { gte: weekAgo },
+          deletedAt: null,
+        },
+      }),
+      this.prisma.task.count({
+        where: {
+          dueDate: { lt: now },
+          status: { notIn: ['DONE', 'CANCELLED'] },
+          deletedAt: null,
+        },
+      }),
+      this.prisma.project.count(),
+      this.prisma.user.count({ where: { isActive: true, deletedAt: null } }),
+    ]);
 
     // My tasks (assigned to current user)
     const myTasks = await this.prisma.task.count({
-      where: { assigneeId: userId, status: { notIn: ['DONE', 'CANCELLED'] }, deletedAt: null },
+      where: {
+        assigneeId: userId,
+        status: { notIn: ['DONE', 'CANCELLED'] },
+        deletedAt: null,
+      },
     });
 
     // Tasks created this week
@@ -150,8 +161,14 @@ export class AnalyticsService {
 
     return sprints.map((sprint) => {
       const completed = sprint.tasks.filter((t) => t.status === 'DONE');
-      const totalPoints = sprint.tasks.reduce((sum, t) => sum + (t.storyPoints || 0), 0);
-      const completedPoints = completed.reduce((sum, t) => sum + (t.storyPoints || 0), 0);
+      const totalPoints = sprint.tasks.reduce(
+        (sum, t) => sum + (t.storyPoints || 0),
+        0,
+      );
+      const completedPoints = completed.reduce(
+        (sum, t) => sum + (t.storyPoints || 0),
+        0,
+      );
 
       return {
         name: sprint.name,
@@ -193,10 +210,12 @@ export class AnalyticsService {
         name: `${m.firstName} ${m.lastName}`,
         avatarUrl: m.avatarUrl,
         totalTasks: m.assignedTasks.length,
-        inProgress: m.assignedTasks.filter((t) => t.status === 'IN_PROGRESS').length,
+        inProgress: m.assignedTasks.filter((t) => t.status === 'IN_PROGRESS')
+          .length,
         todo: m.assignedTasks.filter((t) => t.status === 'TODO').length,
         backlog: m.assignedTasks.filter((t) => t.status === 'BACKLOG').length,
-        inReview: m.assignedTasks.filter((t) => t.status === 'IN_REVIEW').length,
+        inReview: m.assignedTasks.filter((t) => t.status === 'IN_REVIEW')
+          .length,
         urgent: m.assignedTasks.filter((t) => t.priority === 'URGENT').length,
       }))
       .filter((m) => m.totalTasks > 0)
@@ -248,7 +267,11 @@ export class AnalyticsService {
 
     // Group by date
     const dailyCounts: Record<string, number> = {};
-    for (let d = new Date(thirtyDaysAgo); d <= now; d.setDate(d.getDate() + 1)) {
+    for (
+      let d = new Date(thirtyDaysAgo);
+      d <= now;
+      d.setDate(d.getDate() + 1)
+    ) {
       dailyCounts[d.toISOString().split('T')[0]] = 0;
     }
 

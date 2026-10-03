@@ -1,18 +1,19 @@
-'use client';
+"use client";
 
-import * as React from 'react';
+import * as React from "react";
+
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Sprint, useCreateSprint, useUpdateSprint } from '@/hooks/use-sprints';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Sprint, useCreateSprint, useUpdateSprint } from "@/hooks/use-sprints";
 
 interface SprintModalProps {
   open: boolean;
@@ -33,17 +34,17 @@ function SprintForm({
   const createSprint = useCreateSprint();
   const updateSprint = useUpdateSprint();
 
-  const [name, setName] = React.useState(sprintToEdit?.name || '');
-  const [goal, setGoal] = React.useState(sprintToEdit?.goal || '');
+  const [name, setName] = React.useState(sprintToEdit?.name || "");
+  const [goal, setGoal] = React.useState(sprintToEdit?.goal || "");
   const [startDate, setStartDate] = React.useState(
     sprintToEdit?.startDate
-      ? new Date(sprintToEdit.startDate).toISOString().split('T')[0]
-      : ''
+      ? new Date(sprintToEdit.startDate).toISOString().split("T")[0]
+      : ""
   );
   const [endDate, setEndDate] = React.useState(
     sprintToEdit?.endDate
-      ? new Date(sprintToEdit.endDate).toISOString().split('T')[0]
-      : ''
+      ? new Date(sprintToEdit.endDate).toISOString().split("T")[0]
+      : ""
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -77,7 +78,7 @@ function SprintForm({
     <form onSubmit={handleSubmit}>
       <DialogHeader>
         <DialogTitle>
-          {sprintToEdit ? 'Edit Sprint' : 'Create New Sprint'}
+          {sprintToEdit ? "Edit Sprint" : "Create New Sprint"}
         </DialogTitle>
       </DialogHeader>
 
@@ -140,20 +141,15 @@ function SprintForm({
       </div>
 
       <DialogFooter>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={onClose}
-        >
+        <Button type="button" variant="outline" size="sm" onClick={onClose}>
           Cancel
         </Button>
         <Button type="submit" size="sm" disabled={isPending || !name.trim()}>
           {isPending
-            ? 'Saving...'
+            ? "Saving..."
             : sprintToEdit
-            ? 'Save Changes'
-            : 'Create Sprint'}
+              ? "Save Changes"
+              : "Create Sprint"}
         </Button>
       </DialogFooter>
     </form>
@@ -171,7 +167,7 @@ export function SprintModal({
       <DialogContent className="sm:max-w-md">
         {open && (
           <SprintForm
-            key={sprintToEdit?.id || 'new'}
+            key={sprintToEdit?.id || "new"}
             projectId={projectId}
             sprintToEdit={sprintToEdit}
             onClose={() => onOpenChange(false)}

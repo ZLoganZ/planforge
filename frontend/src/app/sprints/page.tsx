@@ -1,30 +1,6 @@
 "use client";
- 
-import { KanbanCard, KanbanCardOverlay } from "@/components/kanban/kanban-card";
-import { TaskDetailDialog } from "@/components/kanban/task-detail-dialog";
-import { AppLayout } from "@/components/layout/AppLayout";
-import { SprintModal } from "@/components/sprints/sprint-modal";
-import { TaskCreateModal } from "@/components/tasks/task-create-modal";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useProjects } from "@/hooks/use-projects";
-import {
-  Sprint,
-  useCompleteSprint,
-  useDeleteSprint,
-  useSprints,
-  useStartSprint,
-} from "@/hooks/use-sprints";
-import { Task, useReorderTasks, useTasks } from "@/hooks/use-tasks";
+
+import * as React from "react";
 import {
   closestCorners,
   DndContext,
@@ -51,13 +27,38 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import * as React from "react";
+
+import { KanbanCard, KanbanCardOverlay } from "@/components/kanban/kanban-card";
+import { TaskDetailDialog } from "@/components/kanban/task-detail-dialog";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { SprintModal } from "@/components/sprints/sprint-modal";
+import { TaskCreateModal } from "@/components/tasks/task-create-modal";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useProjects } from "@/hooks/use-projects";
+import {
+  Sprint,
+  useCompleteSprint,
+  useDeleteSprint,
+  useSprints,
+  useStartSprint,
+} from "@/hooks/use-sprints";
+import { Task, useReorderTasks, useTasks } from "@/hooks/use-tasks";
 
 export default function SprintsPage() {
   const { data: projectsData } = useProjects();
   const projects = React.useMemo(
     () => projectsData?.items || [],
-    [projectsData?.items],
+    [projectsData?.items]
   );
 
   const [selectedProjectId, setSelectedProjectId] = React.useState<string>("");
@@ -77,7 +78,7 @@ export default function SprintsPage() {
   });
   const sprintList = React.useMemo(
     () => (Array.isArray(sprints) ? sprints : []),
-    [sprints],
+    [sprints]
   );
 
   const activeSprint = sprintList.find((s) => s.status === "ACTIVE");
@@ -107,11 +108,11 @@ export default function SprintsPage() {
 
   const backlogPoints = backlogTasks.reduce(
     (acc, t) => acc + (t.storyPoints || 0),
-    0,
+    0
   );
   const sprintTotalPoints = sprintTasks.reduce(
     (acc, t) => acc + (t.storyPoints || 0),
-    0,
+    0
   );
   const sprintCompletedPoints = sprintTasks
     .filter((t) => t.status === "DONE")
@@ -129,7 +130,7 @@ export default function SprintsPage() {
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    }),
+    })
   );
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -318,14 +319,14 @@ export default function SprintsPage() {
                           {selectedSprint.startDate
                             ? format(
                                 new Date(selectedSprint.startDate),
-                                "MMM d",
+                                "MMM d"
                               )
                             : "Start"}
                           {" — "}
                           {selectedSprint.endDate
                             ? format(
                                 new Date(selectedSprint.endDate),
-                                "MMM d, yyyy",
+                                "MMM d, yyyy"
                               )
                             : "End"}
                         </span>
@@ -614,9 +615,7 @@ export default function SprintsPage() {
             </div>
           </div>
           <DragOverlay>
-            {activeTask ? (
-              <KanbanCardOverlay task={activeTask} />
-            ) : null}
+            {activeTask ? <KanbanCardOverlay task={activeTask} /> : null}
           </DragOverlay>
         </DndContext>
 

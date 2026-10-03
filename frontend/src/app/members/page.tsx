@@ -1,5 +1,23 @@
 "use client";
 
+import React, { useState } from "react";
+import { format } from "date-fns";
+import {
+  Crown,
+  Eye,
+  Mail,
+  MoreVertical,
+  Plus,
+  RefreshCw,
+  Search,
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
+  User,
+  Users as UsersIcon,
+  UserX,
+} from "lucide-react";
+
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -22,23 +40,6 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/auth-context";
 import { UserMember, useUpdateUser, useUsers } from "@/hooks/use-members";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import {
-  Crown,
-  Eye,
-  Mail,
-  MoreVertical,
-  Plus,
-  RefreshCw,
-  Search,
-  Shield,
-  ShieldAlert,
-  ShieldCheck,
-  User,
-  Users as UsersIcon,
-  UserX,
-} from "lucide-react";
-import React, { useState } from "react";
 
 export default function MembersPage() {
   const { user: currentUser } = useAuth();
@@ -488,7 +489,7 @@ export default function MembersPage() {
                   value={inviteRole}
                   onChange={(e) =>
                     setInviteRole(
-                      e.target.value as "OWNER" | "ADMIN" | "MEMBER" | "VIEWER",
+                      e.target.value as "OWNER" | "ADMIN" | "MEMBER" | "VIEWER"
                     )
                   }
                   className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground focus:ring-1 focus:ring-ring focus:outline-hidden"

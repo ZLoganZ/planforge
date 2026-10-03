@@ -1,13 +1,14 @@
 import {
-  Injectable,
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  Injectable,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Role } from '@prisma/client';
-import { ROLES_KEY } from '../decorators/index.js';
+
 import { PrismaService } from '../../database/prisma.service.js';
+import { ROLES_KEY } from '../decorators/index.js';
 
 const ROLE_WEIGHT: Record<Role, number> = {
   OWNER: 4,
@@ -44,8 +45,14 @@ export class RolesGuard implements CanActivate {
     let effectiveRole: Role | null = user.role || null;
 
     if (!effectiveRole) {
-      const workspaceId = request.params?.workspaceId || request.query?.workspaceId || request.body?.workspaceId;
-      const projectId = request.params?.projectId || request.query?.projectId || request.body?.projectId;
+      const workspaceId =
+        request.params?.workspaceId ||
+        request.query?.workspaceId ||
+        request.body?.workspaceId;
+      const projectId =
+        request.params?.projectId ||
+        request.query?.projectId ||
+        request.body?.projectId;
 
       if (projectId) {
         const member = await this.prisma.projectMember.findUnique({
@@ -79,11 +86,15 @@ export class RolesGuard implements CanActivate {
     }
 
     if (!effectiveRole) {
-      throw new ForbiddenException('Access denied: No role assigned in this scope');
+      throw new ForbiddenException(
+        'Access denied: No role assigned in this scope',
+      );
     }
 
     // Role hierarchy evaluation: user has sufficient access if effectiveRole weight >= minimum required role weight
-    const minRequiredWeight = Math.min(...requiredRoles.map((r) => ROLE_WEIGHT[r] ?? 1));
+    const minRequiredWeight = Math.min(
+      ...requiredRoles.map((r) => ROLE_WEIGHT[r] ?? 1),
+    );
     const userWeight = ROLE_WEIGHT[effectiveRole] ?? 0;
 
     if (userWeight < minRequiredWeight) {

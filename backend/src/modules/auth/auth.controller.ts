@@ -1,20 +1,21 @@
 import {
-  Controller,
-  Post,
-  Get,
-  Patch,
   Body,
-  Res,
-  UseGuards,
+  Controller,
+  Get,
   HttpCode,
   HttpStatus,
+  Patch,
+  Post,
+  Res,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
-import { AuthService } from './auth.service.js';
-import { RegisterDto, LoginDto, UpdateProfileDto } from './dto/auth.dto.js';
+
 import { CurrentUser, Public } from '../../common/decorators/index.js';
+import { AuthService } from './auth.service.js';
+import { LoginDto, RegisterDto, UpdateProfileDto } from './dto/auth.dto.js';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -32,7 +33,10 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Sign in and receive JWT tokens' })
-  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const result = await this.authService.login(dto);
 
     // Set refresh token in HTTP-only cookie

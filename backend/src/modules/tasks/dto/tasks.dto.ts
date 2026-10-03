@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { TaskPriority, TaskStatus } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -11,7 +12,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { TaskStatus, TaskPriority } from '@prisma/client';
+
 import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto.js';
 
 export class QueryTasksDto extends PaginationQueryDto {
@@ -223,4 +224,3 @@ export class BulkUpdateTasksDto {
   @IsString()
   sprintId?: string | null;
 }
-

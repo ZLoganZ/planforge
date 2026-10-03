@@ -14,7 +14,10 @@
     "db:generate": "pnpm --filter backend prisma:generate",
     "db:migrate": "pnpm --filter backend prisma:migrate",
     "db:seed": "pnpm --filter backend prisma:seed",
-    "db:studio": "pnpm --filter backend prisma:studio"
+    "db:studio": "pnpm --filter backend prisma:studio",
+    "format": "pnpm -r format",
+    "format:backend": "pnpm --filter backend format",
+    "format:frontend": "pnpm --filter frontend format"
   },
   "keywords": [
     "nextjs",

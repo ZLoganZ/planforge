@@ -1,7 +1,8 @@
-'use client';
+"use client";
 
-import { useQuery } from '@tanstack/react-query';
-import { auditLogsApi } from '@/lib/api';
+import { useQuery } from "@tanstack/react-query";
+
+import { auditLogsApi } from "@/lib/api";
 
 export interface AuditLogItem {
   id: string;
@@ -39,7 +40,7 @@ export interface AuditLogsParams {
 
 export function useAuditLogs(params?: AuditLogsParams) {
   return useQuery({
-    queryKey: ['audit-logs', params],
+    queryKey: ["audit-logs", params],
     queryFn: async () => {
       const res = await auditLogsApi.getAll(params as Record<string, unknown>);
       return res.data;
@@ -49,7 +50,7 @@ export function useAuditLogs(params?: AuditLogsParams) {
 
 export function useAuditLogStats() {
   return useQuery({
-    queryKey: ['audit-logs-stats'],
+    queryKey: ["audit-logs-stats"],
     queryFn: async () => {
       const res = await auditLogsApi.getStats();
       return res.data;

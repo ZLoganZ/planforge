@@ -1,9 +1,10 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Role } from '@prisma/client';
+
+import { Roles } from '../../common/decorators/index.js';
 import { AuditLogsService } from './audit-logs.service.js';
 import { QueryAuditLogsDto } from './dto/audit-logs.dto.js';
-import { Roles } from '../../common/decorators/index.js';
-import { Role } from '@prisma/client';
 
 @ApiTags('Audit Logs')
 @ApiBearerAuth('JWT-auth')

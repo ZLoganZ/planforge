@@ -1,14 +1,16 @@
-'use client';
+"use client";
 
-import React, { useRef, useState } from 'react';
-import { Search, Moon, Sun, LogOut, Camera, Loader2 } from 'lucide-react';
-import { useTheme } from 'next-themes';
-import { useAuth } from '@/context/auth-context';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
-import { NotificationBell } from './NotificationBell';
-import { attachmentsApi } from '@/lib/api';
+import React, { useRef, useState } from "react";
+import { Camera, Loader2, LogOut, Moon, Search, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useAuth } from "@/context/auth-context";
+import { attachmentsApi } from "@/lib/api";
+
+import { NotificationBell } from "./NotificationBell";
 
 export function Header() {
   const { theme, setTheme } = useTheme();
@@ -18,7 +20,7 @@ export function Header() {
 
   const initials = user
     ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
-    : '??';
+    : "??";
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -28,10 +30,10 @@ export function Header() {
       await attachmentsApi.uploadAvatar(file);
       await refreshUser();
     } catch (err) {
-      console.error('Failed to upload avatar:', err);
+      console.error("Failed to upload avatar:", err);
     } finally {
       setUploadingAvatar(false);
-      if (avatarInputRef.current) avatarInputRef.current.value = '';
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
     }
   };
 
@@ -54,10 +56,10 @@ export function Header() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           className="text-muted-foreground hover:text-foreground"
         >
-          {theme === 'dark' ? (
+          {theme === "dark" ? (
             <Sun className="size-5" />
           ) : (
             <Moon className="size-5" />
@@ -86,12 +88,14 @@ export function Header() {
               onChange={handleAvatarChange}
             />
             <Avatar
-              onClick={() => !uploadingAvatar && avatarInputRef.current?.click()}
+              onClick={() =>
+                !uploadingAvatar && avatarInputRef.current?.click()
+              }
               className="size-9 cursor-pointer border-2 border-primary/20 transition-transform group-hover:scale-105"
             >
               <AvatarImage
                 key={user?.avatarUrl}
-                src={user?.avatarUrl || ''}
+                src={user?.avatarUrl || ""}
                 alt={user?.firstName}
               />
               <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
@@ -103,7 +107,9 @@ export function Header() {
               </AvatarFallback>
             </Avatar>
             <div
-              onClick={() => !uploadingAvatar && avatarInputRef.current?.click()}
+              onClick={() =>
+                !uploadingAvatar && avatarInputRef.current?.click()
+              }
               className="absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100"
               title="Change avatar"
             >

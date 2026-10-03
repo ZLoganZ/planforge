@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+
 import { PrismaService } from '../../database/prisma.service.js';
 import { StorageService } from '../storage/storage.service.js';
 
@@ -11,10 +12,7 @@ export class AttachmentsService {
     private readonly storage: StorageService,
   ) {}
 
-  async uploadAttachment(
-    taskId: string,
-    file: Express.Multer.File,
-  ) {
+  async uploadAttachment(taskId: string, file: Express.Multer.File) {
     // Verify task exists
     const task = await this.prisma.task.findUnique({ where: { id: taskId } });
     if (!task) throw new NotFoundException('Task not found');

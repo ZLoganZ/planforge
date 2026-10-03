@@ -1,15 +1,25 @@
-import { Controller, Get, Post, Patch, Delete, Param, Query, Body } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
-import { ProjectsService } from './projects.service.js';
 import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Role } from '@prisma/client';
+
+import { CurrentUser, Roles } from '../../common/decorators/index.js';
+import {
+  AddProjectMemberDto,
   CreateProjectDto,
   QueryProjectsDto,
   UpdateProjectDto,
-  AddProjectMemberDto,
   UpdateProjectMemberDto,
 } from './dto/projects.dto.js';
-import { CurrentUser, Roles } from '../../common/decorators/index.js';
+import { ProjectsService } from './projects.service.js';
 
 @ApiTags('Projects')
 @ApiBearerAuth('JWT-auth')
@@ -80,4 +90,3 @@ export class ProjectsController {
     return this.projectsService.removeMember(id, userId);
   }
 }
-

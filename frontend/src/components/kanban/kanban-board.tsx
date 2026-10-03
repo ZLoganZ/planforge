@@ -1,5 +1,24 @@
 "use client";
 
+import { useCallback, useMemo, useState } from "react";
+import {
+  closestCorners,
+  CollisionDetection,
+  DndContext,
+  DragEndEvent,
+  DragOverEvent,
+  DragOverlay,
+  DragStartEvent,
+  KeyboardSensor,
+  PointerSensor,
+  pointerWithin,
+  rectIntersection,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { Filter, Plus, RefreshCw, Search } from "lucide-react";
+
 import { TaskCreateModal } from "@/components/tasks/task-create-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,24 +34,7 @@ import { useProjects } from "@/hooks/use-projects";
 import { useSprints } from "@/hooks/use-sprints";
 import { Task, useReorderTasks, useTasks } from "@/hooks/use-tasks";
 import { cn } from "@/lib/utils";
-import {
-  CollisionDetection,
-  DndContext,
-  DragEndEvent,
-  DragOverEvent,
-  DragOverlay,
-  DragStartEvent,
-  KeyboardSensor,
-  PointerSensor,
-  closestCorners,
-  pointerWithin,
-  rectIntersection,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { Filter, Plus, RefreshCw, Search } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+
 import { KanbanCardOverlay } from "./kanban-card";
 import { ColumnDefinition, KanbanColumn } from "./kanban-column";
 import { TaskDetailDialog } from "./task-detail-dialog";
@@ -61,7 +63,7 @@ interface KanbanBoardProps {
 
 export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
   const [selectedProjectId, setSelectedProjectId] = useState<string>(
-    initialProjectId || "all",
+    initialProjectId || "all"
   );
   const [selectedSprintId, setSelectedSprintId] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -98,7 +100,7 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
 
   // Local drag state for optimistic column reordering during DnD
   const [dragColumns, setDragColumns] = useState<Record<string, Task[]> | null>(
-    null,
+    null
   );
 
   const derivedColumns = useMemo(() => {
@@ -110,7 +112,7 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
       filtered = filtered.filter(
         (t) =>
           t.title.toLowerCase().includes(q) ||
-          `${t.project?.key}-${t.taskNumber}`.toLowerCase().includes(q),
+          `${t.project?.key}-${t.taskNumber}`.toLowerCase().includes(q)
       );
     }
 
@@ -149,7 +151,7 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    }),
+    })
   );
 
   const collisionDetectionStrategy: CollisionDetection = useCallback((args) => {
@@ -195,7 +197,7 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
         setActiveTask(foundTask);
       }
     },
-    [dragColumns, derivedColumns],
+    [dragColumns, derivedColumns]
   );
 
   const handleDragOver = useCallback(
@@ -237,7 +239,11 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
           const activeIndex = colList.findIndex((t) => t.id === activeId);
           const overIndex = colList.findIndex((t) => t.id === overId);
 
-          if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
+          if (
+            activeIndex !== -1 &&
+            overIndex !== -1 &&
+            activeIndex !== overIndex
+          ) {
             return {
               ...current,
               [activeColumn]: arrayMove(colList, activeIndex, overIndex),
@@ -271,7 +277,7 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
         };
       });
     },
-    [derivedColumns],
+    [derivedColumns]
   );
 
   const handleDragEnd = useCallback(
@@ -290,7 +296,10 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
 
       let targetCol: string | undefined;
       for (const [colId, list] of Object.entries(current)) {
-        if (colId === overId || list.some((t) => t.id === overId || t.id === activeId)) {
+        if (
+          colId === overId ||
+          list.some((t) => t.id === overId || t.id === activeId)
+        ) {
           targetCol = colId;
           break;
         }
@@ -331,7 +340,7 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
         onSettled: () => setDragColumns(null),
       });
     },
-    [dragColumns, derivedColumns, reorderTasks],
+    [dragColumns, derivedColumns, reorderTasks]
   );
 
   const currentProjectIdForCreation =
@@ -462,9 +471,7 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
               easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
             }}
           >
-            {activeTask ? (
-              <KanbanCardOverlay task={activeTask} />
-            ) : null}
+            {activeTask ? <KanbanCardOverlay task={activeTask} /> : null}
           </DragOverlay>
         </DndContext>
       )}

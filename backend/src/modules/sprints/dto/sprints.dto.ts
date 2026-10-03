@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { SprintStatus } from '@prisma/client';
 import {
   IsDateString,
   IsEnum,
@@ -6,7 +7,6 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { SprintStatus } from '@prisma/client';
 
 export class QuerySprintsDto {
   @ApiPropertyOptional()
@@ -26,7 +26,9 @@ export class CreateSprintDto {
   @IsNotEmpty()
   name!: string;
 
-  @ApiPropertyOptional({ example: 'Improve board rendering speed and optimize queries' })
+  @ApiPropertyOptional({
+    example: 'Improve board rendering speed and optimize queries',
+  })
   @IsOptional()
   @IsString()
   goal?: string;
@@ -53,7 +55,9 @@ export class UpdateSprintDto {
   @IsString()
   name?: string;
 
-  @ApiPropertyOptional({ example: 'Improve board rendering speed and optimize queries' })
+  @ApiPropertyOptional({
+    example: 'Improve board rendering speed and optimize queries',
+  })
   @IsOptional()
   @IsString()
   goal?: string;

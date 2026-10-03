@@ -1,7 +1,8 @@
-'use client';
+"use client";
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { notificationsApi } from '@/lib/api';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { notificationsApi } from "@/lib/api";
 
 export interface NotificationItem {
   id: string;
@@ -13,9 +14,13 @@ export interface NotificationItem {
   createdAt: string;
 }
 
-export function useNotifications(params?: { unreadOnly?: boolean; page?: number; limit?: number }) {
+export function useNotifications(params?: {
+  unreadOnly?: boolean;
+  page?: number;
+  limit?: number;
+}) {
   return useQuery({
-    queryKey: ['notifications', params],
+    queryKey: ["notifications", params],
     queryFn: async () => {
       const res = await notificationsApi.getAll(params);
       return res.data;
@@ -25,7 +30,7 @@ export function useNotifications(params?: { unreadOnly?: boolean; page?: number;
 
 export function useUnreadNotificationsCount() {
   return useQuery({
-    queryKey: ['notifications-unread-count'],
+    queryKey: ["notifications-unread-count"],
     queryFn: async () => {
       const res = await notificationsApi.getUnreadCount();
       return (res.data as { count: number }).count;
@@ -42,8 +47,10 @@ export function useMarkNotificationRead() {
       return res.data;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      void queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["notifications-unread-count"],
+      });
     },
   });
 }
@@ -56,8 +63,10 @@ export function useMarkAllNotificationsRead() {
       return res.data;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      void queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["notifications-unread-count"],
+      });
     },
   });
 }
@@ -70,8 +79,10 @@ export function useDeleteNotification() {
       return res.data;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      void queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["notifications-unread-count"],
+      });
     },
   });
 }

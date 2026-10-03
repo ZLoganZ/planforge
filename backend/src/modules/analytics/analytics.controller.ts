@@ -1,7 +1,8 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { AnalyticsService } from './analytics.service.js';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+
 import { CurrentUser } from '../../common/decorators/index.js';
+import { AnalyticsService } from './analytics.service.js';
 
 @ApiTags('Analytics')
 @ApiBearerAuth()
@@ -42,7 +43,9 @@ export class AnalyticsController {
   @Get('recent-activity')
   @ApiOperation({ summary: 'Recent audit log activity' })
   getRecentActivity(@Query('limit') limit?: string) {
-    return this.analyticsService.getRecentActivity(limit ? parseInt(limit, 10) : 20);
+    return this.analyticsService.getRecentActivity(
+      limit ? parseInt(limit, 10) : 20,
+    );
   }
 
   @Get('completion-trend')

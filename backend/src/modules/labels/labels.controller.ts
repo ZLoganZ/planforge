@@ -1,7 +1,16 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { LabelsService } from './labels.service.js';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+
 import { CreateLabelDto, UpdateLabelDto } from './dto/labels.dto.js';
+import { LabelsService } from './labels.service.js';
 
 @ApiTags('Labels')
 @ApiBearerAuth('JWT-auth')

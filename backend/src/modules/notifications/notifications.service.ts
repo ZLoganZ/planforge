@@ -1,8 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../database/prisma.service.js';
+
 import type { PaginatedResult } from '../../common/dto/pagination-query.dto.js';
-import { CreateNotificationDto, QueryNotificationsDto } from './dto/notifications.dto.js';
+import { PrismaService } from '../../database/prisma.service.js';
+import {
+  CreateNotificationDto,
+  QueryNotificationsDto,
+} from './dto/notifications.dto.js';
 import { NotificationsGateway } from './notifications.gateway.js';
 
 @Injectable()
@@ -29,7 +33,10 @@ export class NotificationsService {
     return notification;
   }
 
-  async findAll(userId: string, query: QueryNotificationsDto): Promise<PaginatedResult<any>> {
+  async findAll(
+    userId: string,
+    query: QueryNotificationsDto,
+  ): Promise<PaginatedResult<any>> {
     const { page = 1, limit = 20, unreadOnly, type } = query;
 
     const where: Prisma.NotificationWhereInput = {

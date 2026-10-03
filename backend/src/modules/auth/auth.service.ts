@@ -1,15 +1,17 @@
+import { createHash } from 'crypto';
+
 import {
-  Injectable,
-  UnauthorizedException,
   ConflictException,
+  Injectable,
   Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { hash, compare } from 'bcryptjs';
-import { createHash } from 'crypto';
+import { compare, hash } from 'bcryptjs';
+
 import { PrismaService } from '../../database/prisma.service.js';
-import { RegisterDto, LoginDto, UpdateProfileDto } from './dto/auth.dto.js';
+import { LoginDto, RegisterDto, UpdateProfileDto } from './dto/auth.dto.js';
 
 @Injectable()
 export class AuthService {
@@ -105,7 +107,11 @@ export class AuthService {
       include: { user: true },
     });
 
-    if (!storedToken || storedToken.revokedAt || storedToken.userId !== userId) {
+    if (
+      !storedToken ||
+      storedToken.revokedAt ||
+      storedToken.userId !== userId
+    ) {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
@@ -197,13 +203,13 @@ export class AuthService {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
         secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
-        expiresIn:
-          (this.configService.get<string>('JWT_ACCESS_EXPIRES_IN') || '15m') as any,
+        expiresIn: (this.configService.get<string>('JWT_ACCESS_EXPIRES_IN') ||
+          '15m') as any,
       }),
       this.jwtService.signAsync(payload, {
         secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
-        expiresIn:
-          (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d') as any,
+        expiresIn: (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ||
+          '7d') as any,
       }),
     ]);
 

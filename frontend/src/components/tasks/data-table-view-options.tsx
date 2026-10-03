@@ -1,30 +1,31 @@
-import { DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu';
-import { Table } from '@tanstack/react-table';
-import { SlidersHorizontal } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
+import { Table } from "@tanstack/react-table";
+import { SlidersHorizontal } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 
 interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
 }
 
 const columnLabels: Record<string, string> = {
-  taskNumber: 'Key',
-  project: 'Project',
-  title: 'Title',
-  status: 'Status',
-  priority: 'Priority',
-  sprint: 'Sprint',
-  storyPoints: 'Story Points',
-  dueDate: 'Due Date',
-  assignee: 'Assignee',
-  createdAt: 'Created At',
+  taskNumber: "Key",
+  project: "Project",
+  title: "Title",
+  status: "Status",
+  priority: "Priority",
+  sprint: "Sprint",
+  storyPoints: "Story Points",
+  dueDate: "Due Date",
+  assignee: "Assignee",
+  createdAt: "Created At",
 };
 
 export function DataTableViewOptions<TData>({
@@ -49,7 +50,7 @@ export function DataTableViewOptions<TData>({
           .getAllColumns()
           .filter(
             (column) =>
-              typeof column.accessorFn !== 'undefined' && column.getCanHide()
+              typeof column.accessorFn !== "undefined" && column.getCanHide()
           )
           .map((column) => {
             return (

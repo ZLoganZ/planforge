@@ -1,44 +1,51 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import React from "react";
+import { formatDistanceToNow } from "date-fns";
 import {
-  ListTodo,
-  Clock,
-  CheckCircle2,
-  AlertTriangle,
-  FolderKanban,
-  Users,
   Activity,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  FolderKanban,
   Layers,
+  ListTodo,
+  Users,
   Zap,
-} from 'lucide-react';
+} from "lucide-react";
 import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
   Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  CartesianGrid,
-} from 'recharts';
+} from "recharts";
+
+import { AppLayout } from "@/components/layout/AppLayout";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   useDashboardKpis,
-  useStatusDistribution,
-  usePriorityDistribution,
-  useSprintVelocity,
   useMemberWorkload,
+  usePriorityDistribution,
   useRecentActivity,
-} from '@/hooks/use-analytics';
-import { formatDistanceToNow } from 'date-fns';
+  useSprintVelocity,
+  useStatusDistribution,
+} from "@/hooks/use-analytics";
 
 const emptySubscribe = () => () => {};
 
@@ -50,48 +57,53 @@ export default function DashboardPage() {
   );
 
   const { data: kpis, isLoading: loadingKpis } = useDashboardKpis();
-  const { data: statusData = [], isLoading: loadingStatus } = useStatusDistribution();
-  const { data: priorityData = [], isLoading: loadingPriority } = usePriorityDistribution();
-  const { data: velocityData = [], isLoading: loadingVelocity } = useSprintVelocity();
-  const { data: workloads = [], isLoading: loadingWorkload } = useMemberWorkload();
-  const { data: activities = [], isLoading: loadingActivity } = useRecentActivity(8);
+  const { data: statusData = [], isLoading: loadingStatus } =
+    useStatusDistribution();
+  const { data: priorityData = [], isLoading: loadingPriority } =
+    usePriorityDistribution();
+  const { data: velocityData = [], isLoading: loadingVelocity } =
+    useSprintVelocity();
+  const { data: workloads = [], isLoading: loadingWorkload } =
+    useMemberWorkload();
+  const { data: activities = [], isLoading: loadingActivity } =
+    useRecentActivity(8);
 
   const kpiCards = [
     {
-      title: 'Total Tasks',
+      title: "Total Tasks",
       value: kpis?.totalTasks ?? 0,
       subtext: `${kpis?.createdThisWeek ?? 0} created this week`,
       icon: ListTodo,
-      color: 'text-sky-500',
-      bgColor: 'bg-sky-500/10',
-      border: 'border-sky-500/20',
+      color: "text-sky-500",
+      bgColor: "bg-sky-500/10",
+      border: "border-sky-500/20",
     },
     {
-      title: 'In Progress',
+      title: "In Progress",
       value: kpis?.inProgress ?? 0,
       subtext: `${kpis?.myTasks ?? 0} assigned to you`,
       icon: Clock,
-      color: 'text-amber-500',
-      bgColor: 'bg-amber-500/10',
-      border: 'border-amber-500/20',
+      color: "text-amber-500",
+      bgColor: "bg-amber-500/10",
+      border: "border-amber-500/20",
     },
     {
-      title: 'Completed',
+      title: "Completed",
       value: kpis?.completedThisWeek ?? 0,
-      subtext: 'Completed this week',
+      subtext: "Completed this week",
       icon: CheckCircle2,
-      color: 'text-emerald-500',
-      bgColor: 'bg-emerald-500/10',
-      border: 'border-emerald-500/20',
+      color: "text-emerald-500",
+      bgColor: "bg-emerald-500/10",
+      border: "border-emerald-500/20",
     },
     {
-      title: 'Overdue Tasks',
+      title: "Overdue Tasks",
       value: kpis?.overdue ?? 0,
-      subtext: (kpis?.overdue ?? 0) > 0 ? 'Requires attention' : 'All on track',
+      subtext: (kpis?.overdue ?? 0) > 0 ? "Requires attention" : "All on track",
       icon: AlertTriangle,
-      color: 'text-rose-500',
-      bgColor: 'bg-rose-500/10',
-      border: 'border-rose-500/20',
+      color: "text-rose-500",
+      bgColor: "bg-rose-500/10",
+      border: "border-rose-500/20",
     },
   ];
 
@@ -105,22 +117,27 @@ export default function DashboardPage() {
               Dashboard
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Live operational metrics, sprint velocity, and team performance overview.
+              Live operational metrics, sprint velocity, and team performance
+              overview.
             </p>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-card/60 px-3.5 py-1.5 backdrop-blur-md">
               <FolderKanban className="size-4 text-primary" />
-              <span className="text-xs font-medium text-muted-foreground">Projects:</span>
+              <span className="text-xs font-medium text-muted-foreground">
+                Projects:
+              </span>
               <span className="text-xs font-bold text-foreground">
-                {loadingKpis ? '...' : kpis?.totalProjects ?? 0}
+                {loadingKpis ? "..." : (kpis?.totalProjects ?? 0)}
               </span>
             </div>
             <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-card/60 px-3.5 py-1.5 backdrop-blur-md">
               <Users className="size-4 text-emerald-500" />
-              <span className="text-xs font-medium text-muted-foreground">Members:</span>
+              <span className="text-xs font-medium text-muted-foreground">
+                Members:
+              </span>
               <span className="text-xs font-bold text-foreground">
-                {loadingKpis ? '...' : kpis?.totalMembers ?? 0}
+                {loadingKpis ? "..." : (kpis?.totalMembers ?? 0)}
               </span>
             </div>
           </div>
@@ -146,7 +163,9 @@ export default function DashboardPage() {
                         {kpi.value}
                       </p>
                     )}
-                    <p className="text-xs text-muted-foreground">{kpi.subtext}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {kpi.subtext}
+                    </p>
                   </div>
                   <div className={`rounded-xl p-3.5 ${kpi.bgColor}`}>
                     <kpi.icon className={`size-6 ${kpi.color}`} />
@@ -198,21 +217,26 @@ export default function DashboardPage() {
                       </Pie>
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: 'var(--card)',
-                          borderColor: 'var(--border)',
-                          borderRadius: '8px',
-                          color: 'var(--foreground)',
-                          fontSize: '12px',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                          backgroundColor: "var(--card)",
+                          borderColor: "var(--border)",
+                          borderRadius: "8px",
+                          color: "var(--foreground)",
+                          fontSize: "12px",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                         }}
-                        itemStyle={{ color: 'var(--foreground)' }}
-                        labelStyle={{ color: 'var(--foreground)', fontWeight: 600 }}
+                        itemStyle={{ color: "var(--foreground)" }}
+                        labelStyle={{
+                          color: "var(--foreground)",
+                          fontWeight: 600,
+                        }}
                       />
                       <Legend
                         verticalAlign="bottom"
                         height={36}
                         formatter={(val) => (
-                          <span className="text-xs text-muted-foreground">{val}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {val}
+                          </span>
                         )}
                       />
                     </PieChart>
@@ -251,26 +275,29 @@ export default function DashboardPage() {
                       <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
                       <XAxis
                         dataKey="label"
-                        tick={{ fontSize: 12, fill: 'currentColor' }}
+                        tick={{ fontSize: 12, fill: "currentColor" }}
                         className="text-muted-foreground"
                       />
                       <YAxis
                         allowDecimals={false}
-                        tick={{ fontSize: 12, fill: 'currentColor' }}
+                        tick={{ fontSize: 12, fill: "currentColor" }}
                         className="text-muted-foreground"
                       />
                       <Tooltip
                         cursor={false}
                         contentStyle={{
-                          backgroundColor: 'var(--card)',
-                          borderColor: 'var(--border)',
-                          borderRadius: '8px',
-                          color: 'var(--foreground)',
-                          fontSize: '12px',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                          backgroundColor: "var(--card)",
+                          borderColor: "var(--border)",
+                          borderRadius: "8px",
+                          color: "var(--foreground)",
+                          fontSize: "12px",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                         }}
-                        itemStyle={{ color: 'var(--foreground)' }}
-                        labelStyle={{ color: 'var(--foreground)', fontWeight: 600 }}
+                        itemStyle={{ color: "var(--foreground)" }}
+                        labelStyle={{
+                          color: "var(--foreground)",
+                          fontWeight: 600,
+                        }}
                       />
                       <Bar dataKey="count" radius={[6, 6, 0, 0]}>
                         {priorityData.map((entry, index) => (
@@ -320,32 +347,37 @@ export default function DashboardPage() {
                       <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
                       <XAxis
                         dataKey="name"
-                        tick={{ fontSize: 11, fill: 'currentColor' }}
+                        tick={{ fontSize: 11, fill: "currentColor" }}
                         className="text-muted-foreground"
                       />
                       <YAxis
                         allowDecimals={false}
-                        tick={{ fontSize: 11, fill: 'currentColor' }}
+                        tick={{ fontSize: 11, fill: "currentColor" }}
                         className="text-muted-foreground"
                       />
                       <Tooltip
                         cursor={false}
                         contentStyle={{
-                          backgroundColor: 'var(--card)',
-                          borderColor: 'var(--border)',
-                          borderRadius: '8px',
-                          color: 'var(--foreground)',
-                          fontSize: '12px',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                          backgroundColor: "var(--card)",
+                          borderColor: "var(--border)",
+                          borderRadius: "8px",
+                          color: "var(--foreground)",
+                          fontSize: "12px",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                         }}
-                        itemStyle={{ color: 'var(--foreground)' }}
-                        labelStyle={{ color: 'var(--foreground)', fontWeight: 600 }}
+                        itemStyle={{ color: "var(--foreground)" }}
+                        labelStyle={{
+                          color: "var(--foreground)",
+                          fontWeight: 600,
+                        }}
                       />
                       <Legend
                         verticalAlign="top"
                         height={36}
                         formatter={(val) => (
-                          <span className="text-xs text-muted-foreground">{val}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {val}
+                          </span>
                         )}
                       />
                       <Bar
@@ -398,12 +430,12 @@ export default function DashboardPage() {
                     >
                       <div className="flex min-w-0 items-center gap-2.5">
                         <Avatar className="size-7">
-                          <AvatarImage src={member.avatarUrl || ''} />
+                          <AvatarImage src={member.avatarUrl || ""} />
                           <AvatarFallback className="text-[10px] font-bold">
                             {member.name
-                              .split(' ')
+                              .split(" ")
                               .map((n) => n[0])
-                              .join('')
+                              .join("")
                               .slice(0, 2)
                               .toUpperCase()}
                           </AvatarFallback>
@@ -414,12 +446,18 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex shrink-0 items-center gap-1.5">
                         {member.inProgress > 0 && (
-                          <Badge variant="secondary" className="border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-500">
+                          <Badge
+                            variant="secondary"
+                            className="border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-500"
+                          >
                             {member.inProgress} In Dev
                           </Badge>
                         )}
                         {member.urgent > 0 && (
-                          <Badge variant="destructive" className="px-1.5 py-0.5 text-[10px]">
+                          <Badge
+                            variant="destructive"
+                            className="px-1.5 py-0.5 text-[10px]"
+                          >
                             {member.urgent} Urgent
                           </Badge>
                         )}
@@ -469,33 +507,43 @@ export default function DashboardPage() {
                 {activities.map((act) => {
                   const actorName = act.actor
                     ? `${act.actor.firstName} ${act.actor.lastName}`
-                    : 'System';
+                    : "System";
                   const initials = act.actor
                     ? `${act.actor.firstName[0]}${act.actor.lastName[0]}`.toUpperCase()
-                    : 'SYS';
+                    : "SYS";
 
                   // Human-readable task key & title
-                  const key = act.entityDetails?.key || (act.metadata?.taskKey as string | undefined);
+                  const key =
+                    act.entityDetails?.key ||
+                    (act.metadata?.taskKey as string | undefined);
                   const title =
                     act.entityDetails?.title ||
                     (act.metadata?.taskTitle as string | undefined) ||
-                    (act.diff?.title && typeof act.diff.title === 'object'
-                      ? ((act.diff.title as Record<string, unknown>)?.to as string | undefined)
+                    (act.diff?.title && typeof act.diff.title === "object"
+                      ? ((act.diff.title as Record<string, unknown>)?.to as
+                          string | undefined)
                       : (act.diff?.title as string | undefined));
 
-                  let actionDetail = '';
-                  if (act.action === 'STATUS_CHANGE' && act.diff?.status) {
+                  let actionDetail = "";
+                  if (act.action === "STATUS_CHANGE" && act.diff?.status) {
                     const statusVal = act.diff.status;
                     const toVal =
-                      typeof statusVal === 'object' && statusVal !== null && 'to' in statusVal
+                      typeof statusVal === "object" &&
+                      statusVal !== null &&
+                      "to" in statusVal
                         ? (statusVal as { to: unknown }).to
                         : statusVal;
                     if (toVal) {
-                      actionDetail = `→ ${String(toVal).replace('_', ' ')}`;
+                      actionDetail = `→ ${String(toVal).replace("_", " ")}`;
                     }
                   }
 
-                  const displayName = key && title ? `${key}: ${title}` : (title || key || `${act.entityType} #${act.entityId.slice(0, 6)}`);
+                  const displayName =
+                    key && title
+                      ? `${key}: ${title}`
+                      : title ||
+                        key ||
+                        `${act.entityType} #${act.entityId.slice(0, 6)}`;
 
                   return (
                     <div
@@ -504,7 +552,7 @@ export default function DashboardPage() {
                     >
                       <div className="flex items-start gap-2.5">
                         <Avatar className="mt-0.5 size-6 shrink-0">
-                          <AvatarImage src={act.actor?.avatarUrl || ''} />
+                          <AvatarImage src={act.actor?.avatarUrl || ""} />
                           <AvatarFallback className="text-[9px]">
                             {initials}
                           </AvatarFallback>
@@ -518,7 +566,7 @@ export default function DashboardPage() {
                               variant="secondary"
                               className="shrink-0 px-1 py-0 text-[9px] uppercase"
                             >
-                              {act.action.replace('_', ' ')}
+                              {act.action.replace("_", " ")}
                             </Badge>
                           </div>
                           <div className="mt-1">
@@ -531,7 +579,10 @@ export default function DashboardPage() {
                                   {key}
                                 </span>
                               )}
-                              <span>{title || `${act.entityType} #${act.entityId.slice(0, 6)}`}</span>
+                              <span>
+                                {title ||
+                                  `${act.entityType} #${act.entityId.slice(0, 6)}`}
+                              </span>
                             </p>
                             {actionDetail && (
                               <p className="mt-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">

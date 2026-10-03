@@ -6,7 +6,7 @@
 /* ─── Design System Tokens ──────────────────────────────────── */
 
 :root {
-   --background: oklch(0.99 0 0);
+  --background: oklch(0.99 0 0);
   --foreground: oklch(0.15 0.02 260);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.15 0.02 260);
@@ -85,7 +85,11 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family:
+      "Inter",
+      system-ui,
+      -apple-system,
+      sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -144,7 +148,9 @@
 
 @utility shadow-lg-primary {
   --tw-shadow-color: color-mix(in oklch, var(--primary) 20%, transparent);
-  box-shadow: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);
+  box-shadow:
+    0 10px 15px -3px var(--tw-shadow-color),
+    0 4px 6px -4px var(--tw-shadow-color);
 }
 
 /* ─── Scrollbar ─────────────────────────────────────────────── */

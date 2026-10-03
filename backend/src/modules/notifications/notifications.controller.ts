@@ -1,16 +1,17 @@
 import {
   Controller,
-  Get,
-  Post,
-  Patch,
   Delete,
+  Get,
   Param,
+  Patch,
+  Post,
   Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { NotificationsService } from './notifications.service.js';
-import { QueryNotificationsDto } from './dto/notifications.dto.js';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+
 import { CurrentUser } from '../../common/decorators/index.js';
+import { QueryNotificationsDto } from './dto/notifications.dto.js';
+import { NotificationsService } from './notifications.service.js';
 
 @ApiTags('Notifications')
 @ApiBearerAuth('JWT-auth')

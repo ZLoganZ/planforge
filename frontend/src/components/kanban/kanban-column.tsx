@@ -1,16 +1,18 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Task } from "@/hooks/use-tasks";
-import { cn } from "@/lib/utils";
+import React, { useMemo } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { Plus } from "lucide-react";
-import React, { useMemo } from "react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Task } from "@/hooks/use-tasks";
+import { cn } from "@/lib/utils";
+
 import { KanbanCard } from "./kanban-card";
 
 export interface ColumnDefinition {
@@ -43,7 +45,7 @@ export const KanbanColumn = React.memo(function KanbanColumn({
 
   const totalPoints = useMemo(
     () => tasks.reduce((sum, t) => sum + (t.storyPoints || 0), 0),
-    [tasks],
+    [tasks]
   );
 
   const taskIds = useMemo(() => tasks.map((t) => t.id), [tasks]);
@@ -53,7 +55,7 @@ export const KanbanColumn = React.memo(function KanbanColumn({
       ref={setNodeRef}
       className={cn(
         "flex w-76 shrink-0 flex-col rounded-xl border border-border/60 bg-muted/40 p-3 transition-colors",
-        isOver && "border-primary/40 bg-primary/5 ring-1 ring-primary/20",
+        isOver && "border-primary/40 bg-primary/5 ring-1 ring-primary/20"
       )}
     >
       {/* Column Header */}
@@ -97,10 +99,7 @@ export const KanbanColumn = React.memo(function KanbanColumn({
       </div>
 
       {/* Cards list with sortable context */}
-      <SortableContext
-        items={taskIds}
-        strategy={verticalListSortingStrategy}
-      >
+      <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
         <div className="flex min-h-24 flex-1 flex-col gap-2.5 overflow-y-auto pr-0.5">
           {tasks.map((task) => (
             <KanbanCard key={task.id} task={task} onClick={onTaskClick} />

@@ -1,8 +1,10 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
-import type { Task } from './use-tasks';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export type SprintStatus = 'PLANNING' | 'ACTIVE' | 'COMPLETED';
+import { api } from "@/lib/api";
+
+import type { Task } from "./use-tasks";
+
+export type SprintStatus = "PLANNING" | "ACTIVE" | "COMPLETED";
 
 export interface Sprint {
   id: string;
@@ -38,13 +40,15 @@ export interface UpdateSprintInput {
   endDate?: string;
 }
 
-export function useSprints(query: { projectId?: string; status?: SprintStatus } = {}) {
+export function useSprints(
+  query: { projectId?: string; status?: SprintStatus } = {}
+) {
   return useQuery({
-    queryKey: ['sprints', query],
+    queryKey: ["sprints", query],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (query.projectId) params.append('projectId', query.projectId);
-      if (query.status) params.append('status', query.status);
+      if (query.projectId) params.append("projectId", query.projectId);
+      if (query.status) params.append("status", query.status);
 
       const { data } = await api.get<Sprint[]>(`/sprints?${params.toString()}`);
       return data;
@@ -54,7 +58,7 @@ export function useSprints(query: { projectId?: string; status?: SprintStatus } 
 
 export function useSprint(id: string) {
   return useQuery({
-    queryKey: ['sprint', id],
+    queryKey: ["sprint", id],
     queryFn: async () => {
       const { data } = await api.get<Sprint>(`/sprints/${id}`);
       return data;
@@ -68,11 +72,11 @@ export function useCreateSprint() {
 
   return useMutation({
     mutationFn: async (payload: CreateSprintInput) => {
-      const { data } = await api.post<Sprint>('/sprints', payload);
+      const { data } = await api.post<Sprint>("/sprints", payload);
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sprints'] });
+      queryClient.invalidateQueries({ queryKey: ["sprints"] });
     },
   });
 }
@@ -81,13 +85,16 @@ export function useUpdateSprint() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...payload }: UpdateSprintInput & { id: string }) => {
+    mutationFn: async ({
+      id,
+      ...payload
+    }: UpdateSprintInput & { id: string }) => {
       const { data } = await api.patch<Sprint>(`/sprints/${id}`, payload);
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sprints'] });
-      queryClient.invalidateQueries({ queryKey: ['sprint'] });
+      queryClient.invalidateQueries({ queryKey: ["sprints"] });
+      queryClient.invalidateQueries({ queryKey: ["sprint"] });
     },
   });
 }
@@ -101,8 +108,8 @@ export function useStartSprint() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sprints'] });
-      queryClient.invalidateQueries({ queryKey: ['sprint'] });
+      queryClient.invalidateQueries({ queryKey: ["sprints"] });
+      queryClient.invalidateQueries({ queryKey: ["sprint"] });
     },
   });
 }
@@ -116,8 +123,8 @@ export function useCompleteSprint() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sprints'] });
-      queryClient.invalidateQueries({ queryKey: ['sprint'] });
+      queryClient.invalidateQueries({ queryKey: ["sprints"] });
+      queryClient.invalidateQueries({ queryKey: ["sprint"] });
     },
   });
 }
@@ -131,8 +138,8 @@ export function useDeleteSprint() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sprints'] });
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ["sprints"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
   });
 }

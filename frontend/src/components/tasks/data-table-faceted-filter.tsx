@@ -1,3 +1,7 @@
+import * as React from "react";
+import { Column } from "@tanstack/react-table";
+import { Check, PlusCircle } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,9 +20,6 @@ import {
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { Column } from "@tanstack/react-table";
-import { Check, PlusCircle } from "lucide-react";
-import * as React from "react";
 
 interface DataTableFacetedFilterProps<TData, TValue> {
   column?: Column<TData, TValue>;
@@ -98,7 +99,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                       }
                       const filterValues = Array.from(selectedValues);
                       column?.setFilterValue(
-                        filterValues.length ? filterValues : undefined,
+                        filterValues.length ? filterValues : undefined
                       );
                     }}
                   >
@@ -107,7 +108,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                         "mr-2 flex size-4 items-center justify-center rounded-sm border border-primary",
                         isSelected
                           ? "bg-primary text-primary-foreground"
-                          : "opacity-50 [&_svg]:invisible",
+                          : "opacity-50 [&_svg]:invisible"
                       )}
                     >
                       <Check className={cn("size-4")} />

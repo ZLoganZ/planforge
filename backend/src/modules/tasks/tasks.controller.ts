@@ -1,16 +1,27 @@
-import { Controller, Get, Post, Patch, Delete, Param, Query, Body, Res } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import type { Response } from 'express';
-import { stringify } from 'csv-stringify/sync';
-import { TasksService } from './tasks.service.js';
 import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Res,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { stringify } from 'csv-stringify/sync';
+import type { Response } from 'express';
+
+import { CurrentUser } from '../../common/decorators/index.js';
+import {
+  BulkUpdateTasksDto,
   CreateTaskDto,
   QueryTasksDto,
-  UpdateTaskDto,
   ReorderTasksDto,
-  BulkUpdateTasksDto,
+  UpdateTaskDto,
 } from './dto/tasks.dto.js';
-import { CurrentUser } from '../../common/decorators/index.js';
+import { TasksService } from './tasks.service.js';
 
 @ApiTags('Tasks')
 @ApiBearerAuth('JWT-auth')
@@ -34,10 +45,16 @@ export class TasksController {
   @ApiOperation({ summary: 'Export tasks as CSV' })
   async exportCsv(@Query() query: QueryTasksDto, @Res() res: Response) {
     // Fetch all tasks matching the filters (up to 5000 for export)
-    const { items } = await this.tasksService.findAll({ ...query, limit: 5000, page: 1 });
+    const { items } = await this.tasksService.findAll({
+      ...query,
+      limit: 5000,
+      page: 1,
+    });
 
     const rows = items.map((task: any) => ({
-      'Task Key': task.project ? `${task.project.key}-${task.taskNumber}` : `#${task.taskNumber}`,
+      'Task Key': task.project
+        ? `${task.project.key}-${task.taskNumber}`
+        : `#${task.taskNumber}`,
       Title: task.title,
       Status: task.status,
       Priority: task.priority,
@@ -46,7 +63,9 @@ export class TasksController {
         ? `${task.assignee.firstName} ${task.assignee.lastName}`
         : 'Unassigned',
       Sprint: task.sprint?.name ?? '',
-      'Due Date': task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
+      'Due Date': task.dueDate
+        ? new Date(task.dueDate).toISOString().split('T')[0]
+        : '',
       'Created At': new Date(task.createdAt).toISOString().split('T')[0],
       Project: task.project?.name ?? '',
     }));
@@ -54,7 +73,10 @@ export class TasksController {
     const csv = stringify(rows, { header: true });
 
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="tasks-export-${Date.now()}.csv"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="tasks-export-${Date.now()}.csv"`,
+    );
     res.send(csv);
   }
 
@@ -98,4 +120,3 @@ export class TasksController {
     return this.tasksService.softDelete(id, userId);
   }
 }
-

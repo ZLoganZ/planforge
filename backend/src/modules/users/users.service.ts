@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../database/prisma.service.js';
+
 import type { PaginatedResult } from '../../common/dto/pagination-query.dto.js';
+import { PrismaService } from '../../database/prisma.service.js';
 import { QueryUsersDto, UpdateUserDto } from './dto/users.dto.js';
 
 @Injectable()
@@ -70,7 +71,8 @@ export class UsersService {
 
     const formattedItems = items.map((u) => ({
       ...u,
-      role: u.workspaceMembers[0]?.role ?? u.projectMembers[0]?.role ?? 'MEMBER',
+      role:
+        u.workspaceMembers[0]?.role ?? u.projectMembers[0]?.role ?? 'MEMBER',
     }));
 
     const totalPages = Math.ceil(totalItems / limit);
@@ -123,7 +125,10 @@ export class UsersService {
 
     return {
       ...user,
-      role: user.workspaceMembers[0]?.role ?? user.projectMembers[0]?.role ?? 'MEMBER',
+      role:
+        user.workspaceMembers[0]?.role ??
+        user.projectMembers[0]?.role ??
+        'MEMBER',
     };
   }
 
@@ -134,7 +139,10 @@ export class UsersService {
     if (role && existing.workspaceMembers.length > 0) {
       // Update first workspace membership role
       await this.prisma.workspaceMember.updateMany({
-        where: { userId: id, workspaceId: existing.workspaceMembers[0].workspaceId },
+        where: {
+          userId: id,
+          workspaceId: existing.workspaceMembers[0].workspaceId,
+        },
         data: { role },
       });
     }

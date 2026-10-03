@@ -1,12 +1,11 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Zap, Eye, EyeOff } from 'lucide-react';
-import { useAuth } from '@/context/auth-context';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Eye, EyeOff, Zap } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -14,31 +13,34 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { useAuth } from "@/context/auth-context";
 
 export default function RegisterPage() {
   const { register } = useAuth();
   const router = useRouter();
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setIsLoading(true);
 
     try {
       await register({ email, password, firstName, lastName });
-      router.push('/login');
+      router.push("/login");
     } catch (err) {
-      const axiosError = err as import('axios').AxiosError<{ message: string }>;
+      const axiosError = err as import("axios").AxiosError<{ message: string }>;
       setError(
-        axiosError?.response?.data?.message || 'Registration failed. Please try again.',
+        axiosError?.response?.data?.message ||
+          "Registration failed. Please try again."
       );
     } finally {
       setIsLoading(false);
@@ -59,9 +61,7 @@ export default function RegisterPage() {
             <Zap className="size-7 text-primary-foreground" />
           </div>
           <CardTitle className="text-2xl">Create your account</CardTitle>
-          <CardDescription>
-            Get started with PlanForge today
-          </CardDescription>
+          <CardDescription>Get started with PlanForge today</CardDescription>
         </CardHeader>
 
         <form onSubmit={handleSubmit}>
@@ -74,7 +74,10 @@ export default function RegisterPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label htmlFor="firstName" className="text-sm font-medium text-foreground">
+                <label
+                  htmlFor="firstName"
+                  className="text-sm font-medium text-foreground"
+                >
                   First name
                 </label>
                 <Input
@@ -86,7 +89,10 @@ export default function RegisterPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="lastName" className="text-sm font-medium text-foreground">
+                <label
+                  htmlFor="lastName"
+                  className="text-sm font-medium text-foreground"
+                >
                   Last name
                 </label>
                 <Input
@@ -100,7 +106,10 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-foreground">
+              <label
+                htmlFor="email"
+                className="text-sm font-medium text-foreground"
+              >
                 Email
               </label>
               <Input
@@ -115,13 +124,16 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium text-foreground">
+              <label
+                htmlFor="password"
+                className="text-sm font-medium text-foreground"
+              >
                 Password
               </label>
               <div className="relative">
                 <Input
                   id="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   placeholder="Minimum 6 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -145,19 +157,15 @@ export default function RegisterPage() {
           </CardContent>
 
           <CardFooter className="flex flex-col gap-4">
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <div className="size-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
               ) : (
-                'Create Account'
+                "Create Account"
               )}
             </Button>
             <p className="text-sm text-muted-foreground">
-              Already have an account?{' '}
+              Already have an account?{" "}
               <Link
                 href="/login"
                 className="font-medium text-primary hover:underline"

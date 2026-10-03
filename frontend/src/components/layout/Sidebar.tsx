@@ -1,7 +1,8 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Activity,
   ChevronLeft,
@@ -16,9 +17,9 @@ import {
   Users,
   Zap,
 } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const navItems = [
   {
@@ -76,7 +77,7 @@ export function Sidebar() {
     <aside
       className={cn(
         "sticky top-0 z-40 flex h-screen shrink-0 flex-col border-r border-border bg-card transition-all duration-300 ease-in-out",
-        collapsed ? "w-17" : "w-65",
+        collapsed ? "w-17" : "w-65"
       )}
     >
       {/* Logo */}
@@ -106,7 +107,7 @@ export function Sidebar() {
                   isActive
                     ? "bg-primary/10 text-primary shadow-sm"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                  collapsed && "justify-center px-2",
+                  collapsed && "justify-center px-2"
                 )}
               >
                 <item.icon

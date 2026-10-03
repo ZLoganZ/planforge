@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { analyticsApi } from '@/lib/api';
+import { useQuery } from "@tanstack/react-query";
+
+import { analyticsApi } from "@/lib/api";
 
 export interface DashboardKpis {
   totalTasks: number;
@@ -77,7 +78,7 @@ export interface CompletionTrendItem {
 
 export function useDashboardKpis() {
   return useQuery<DashboardKpis>({
-    queryKey: ['analytics', 'dashboard'],
+    queryKey: ["analytics", "dashboard"],
     queryFn: async () => {
       const res = await analyticsApi.getDashboard();
       return res.data;
@@ -87,7 +88,7 @@ export function useDashboardKpis() {
 
 export function useStatusDistribution() {
   return useQuery<StatusDistributionItem[]>({
-    queryKey: ['analytics', 'status-distribution'],
+    queryKey: ["analytics", "status-distribution"],
     queryFn: async () => {
       const res = await analyticsApi.getStatusDistribution();
       return res.data;
@@ -97,7 +98,7 @@ export function useStatusDistribution() {
 
 export function usePriorityDistribution() {
   return useQuery<PriorityDistributionItem[]>({
-    queryKey: ['analytics', 'priority-distribution'],
+    queryKey: ["analytics", "priority-distribution"],
     queryFn: async () => {
       const res = await analyticsApi.getPriorityDistribution();
       return res.data;
@@ -107,7 +108,7 @@ export function usePriorityDistribution() {
 
 export function useSprintVelocity() {
   return useQuery<SprintVelocityItem[]>({
-    queryKey: ['analytics', 'velocity'],
+    queryKey: ["analytics", "velocity"],
     queryFn: async () => {
       const res = await analyticsApi.getVelocity();
       return res.data;
@@ -117,7 +118,7 @@ export function useSprintVelocity() {
 
 export function useMemberWorkload() {
   return useQuery<MemberWorkloadItem[]>({
-    queryKey: ['analytics', 'member-workload'],
+    queryKey: ["analytics", "member-workload"],
     queryFn: async () => {
       const res = await analyticsApi.getMemberWorkload();
       return res.data;
@@ -127,7 +128,7 @@ export function useMemberWorkload() {
 
 export function useRecentActivity(limit = 10) {
   return useQuery<RecentActivityItem[]>({
-    queryKey: ['analytics', 'recent-activity', limit],
+    queryKey: ["analytics", "recent-activity", limit],
     queryFn: async () => {
       const res = await analyticsApi.getRecentActivity(limit);
       return res.data;
@@ -137,7 +138,7 @@ export function useRecentActivity(limit = 10) {
 
 export function useCompletionTrend() {
   return useQuery<CompletionTrendItem[]>({
-    queryKey: ['analytics', 'completion-trend'],
+    queryKey: ["analytics", "completion-trend"],
     queryFn: async () => {
       const res = await analyticsApi.getCompletionTrend();
       return res.data;
