@@ -1,0 +1,31 @@
+{
+  "name": "planforge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Full-Stack Project Management & Task Tracker (Portfolio Project)",
+  "scripts": {
+    "dev:backend": "pnpm --filter backend start:dev",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "build:backend": "pnpm --filter backend build",
+    "build:frontend": "pnpm --filter frontend build",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "db:generate": "pnpm --filter backend prisma:generate",
+    "db:migrate": "pnpm --filter backend prisma:migrate",
+    "db:seed": "pnpm --filter backend prisma:seed",
+    "db:studio": "pnpm --filter backend prisma:studio"
+  },
+  "keywords": [
+    "nextjs",
+    "nestjs",
+    "typescript",
+    "pnpm",
+    "prisma",
+    "postgresql",
+    "redis",
+    "project-management"
+  ],
+  "author": "LoganZ",
+  "license": "ISC"
+}

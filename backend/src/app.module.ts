@@ -1,0 +1,59 @@
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { AppController } from './app.controller.js';
+import { AppService } from './app.service.js';
+import { PrismaModule } from './database/prisma.module.js';
+import { AuthModule } from './modules/auth/auth.module.js';
+import { UsersModule } from './modules/users/users.module.js';
+import { ProjectsModule } from './modules/projects/projects.module.js';
+import { LabelsModule } from './modules/labels/labels.module.js';
+import { TasksModule } from './modules/tasks/tasks.module.js';
+import { SprintsModule } from './modules/sprints/sprints.module.js';
+import { AuditLogsModule } from './modules/audit-logs/audit-logs.module.js';
+import { NotificationsModule } from './modules/notifications/notifications.module.js';
+import { AnalyticsModule } from './modules/analytics/analytics.module.js';
+import { StorageModule } from './modules/storage/storage.module.js';
+import { AttachmentsModule } from './modules/attachments/attachments.module.js';
+import { HttpLoggerMiddleware } from './common/middleware/http-logger.middleware.js';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
+import { RolesGuard } from './common/guards/roles.guard.js';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    PrismaModule,
+    AuthModule,
+    UsersModule,
+    ProjectsModule,
+    LabelsModule,
+    TasksModule,
+    SprintsModule,
+    AuditLogsModule,
+    NotificationsModule,
+    AnalyticsModule,
+    StorageModule,
+    AttachmentsModule,
+  ],
+  controllers: [AppController],
+  providers: [
+    AppService,
+    // Global guards — applied to all routes unless @Public() is used
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+  ],
+})
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(HttpLoggerMiddleware).forRoutes('*');
+  }
+}
+
