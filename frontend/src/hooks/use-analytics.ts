@@ -145,3 +145,39 @@ export function useCompletionTrend() {
     },
   });
 }
+
+export interface SprintBurndownData {
+  sprint: {
+    id: string;
+    name: string;
+    status: string;
+    totalPoints: number;
+    completedPoints: number;
+    remainingPoints: number;
+    totalTasks: number;
+    completedTasks: number;
+    startDate: string;
+    endDate: string;
+  };
+  points: Array<{
+    dayIndex: number;
+    dayLabel: string;
+    date: string;
+    ideal: number;
+    actual: number | null;
+    completedToDate: number;
+  }>;
+}
+
+export function useSprintBurndown(sprintId?: string) {
+  return useQuery<SprintBurndownData>({
+    queryKey: ["analytics", "burndown", sprintId],
+    queryFn: async () => {
+      if (!sprintId) throw new Error("Sprint ID is required");
+      const res = await analyticsApi.getBurndown(sprintId);
+      return res.data;
+    },
+    enabled: Boolean(sprintId),
+  });
+}
+

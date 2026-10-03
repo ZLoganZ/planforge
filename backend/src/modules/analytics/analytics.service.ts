@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import { PrismaService } from '../../database/prisma.service.js';
 import { enrichAuditLogs } from '../audit-logs/audit-logs.service.js';
@@ -286,5 +286,154 @@ export class AnalyticsService {
       date,
       completed: count,
     }));
+  }
+
+  // ─── Sprint Burndown ─────────────────────────────────────────
+  async getSprintBurndown(sprintId: string) {
+    const sprint = await this.prisma.sprint.findUnique({
+      where: { id: sprintId },
+      include: {
+        tasks: {
+          where: { deletedAt: null },
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            storyPoints: true,
+            completedAt: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+      },
+    });
+
+    if (!sprint) {
+      throw new NotFoundException('Sprint not found');
+    }
+
+    const totalPoints = sprint.tasks.reduce(
+      (acc, t) => acc + (t.storyPoints && t.storyPoints > 0 ? t.storyPoints : 1),
+      0
+    );
+
+    const completedTasks = sprint.tasks.filter((t) => t.status === 'DONE');
+    const completedPoints = completedTasks.reduce(
+      (acc, t) => acc + (t.storyPoints && t.storyPoints > 0 ? t.storyPoints : 1),
+      0
+    );
+    const remainingPoints = Math.max(0, totalPoints - completedPoints);
+
+    const now = new Date();
+    const startDate = sprint.startDate
+      ? new Date(sprint.startDate)
+      : new Date(sprint.createdAt);
+
+    // If an active sprint starts in the future due to timezone difference, align with now
+    if (sprint.status === 'ACTIVE' && startDate > now) {
+      startDate.setTime(now.getTime());
+    }
+    startDate.setUTCHours(0, 0, 0, 0);
+
+    const plannedEndDate = sprint.endDate
+      ? new Date(sprint.endDate)
+      : new Date(startDate.getTime() + 14 * 24 * 60 * 60 * 1000);
+    plannedEndDate.setUTCHours(0, 0, 0, 0);
+
+    const chartEndDate = new Date(plannedEndDate);
+    if (sprint.status === 'ACTIVE' && now > plannedEndDate) {
+      chartEndDate.setTime(now.getTime());
+      chartEndDate.setUTCHours(0, 0, 0, 0);
+    }
+
+    const endOfToday = new Date(now);
+    endOfToday.setUTCHours(23, 59, 59, 999);
+
+    const totalDays = Math.max(
+      1,
+      Math.round((chartEndDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+    );
+    const plannedDays = Math.max(
+      1,
+      Math.round((plannedEndDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+    );
+
+    const daysData = [];
+
+    for (let i = 0; i <= totalDays; i++) {
+      const currentDate = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
+      const dateStr = currentDate.toISOString().split('T')[0];
+      const endOfDay = new Date(currentDate);
+      endOfDay.setUTCHours(23, 59, 59, 999);
+
+      // Ideal linear descent from totalPoints to 0 over the planned sprint days
+      const idealRemaining = Math.max(
+        0,
+        Math.round(totalPoints - (Math.min(i, plannedDays) / plannedDays) * totalPoints)
+      );
+
+      // Determine if this day is past or today
+      let isPastOrToday = false;
+      if (sprint.status === 'COMPLETED') {
+        isPastOrToday = true;
+      } else if (sprint.status === 'ACTIVE') {
+        isPastOrToday = i === 0 || endOfDay <= endOfToday || currentDate <= now;
+      } else {
+        isPastOrToday = i === 0;
+      }
+
+      let actualRemaining: number | null = null;
+      let completedToDate = 0;
+
+      if (isPastOrToday) {
+        const completedTasksForDay = sprint.tasks.filter((t) => {
+          if (t.status !== 'DONE') return false;
+
+          const compDate = t.completedAt ? new Date(t.completedAt) : new Date(t.updatedAt);
+
+          // In completed sprint, by the final day, all completed tasks are burned down
+          if (sprint.status === 'COMPLETED' && i === totalDays) {
+            return true;
+          }
+          // In active sprint, today reflects all tasks completed so far
+          if (sprint.status === 'ACTIVE' && endOfDay >= endOfToday) {
+            return true;
+          }
+          return compDate <= endOfDay;
+        });
+
+        completedToDate = completedTasksForDay.reduce(
+          (acc, t) => acc + (t.storyPoints && t.storyPoints > 0 ? t.storyPoints : 1),
+          0
+        );
+
+        actualRemaining = Math.max(0, totalPoints - completedToDate);
+      }
+
+      daysData.push({
+        dayIndex: i,
+        dayLabel: `Day ${i + 1}`,
+        date: dateStr,
+        ideal: idealRemaining,
+        actual: actualRemaining,
+        completedToDate,
+      });
+    }
+
+    return {
+      sprint: {
+        id: sprint.id,
+        name: sprint.name,
+        status: sprint.status,
+        totalPoints,
+        completedPoints,
+        remainingPoints,
+        totalTasks: sprint.tasks.length,
+        completedTasks: completedTasks.length,
+        startDate: startDate.toISOString(),
+        endDate: plannedEndDate.toISOString(),
+      },
+      points: daysData,
+    };
   }
 }

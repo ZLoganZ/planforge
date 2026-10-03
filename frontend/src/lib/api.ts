@@ -193,6 +193,7 @@ export const analyticsApi = {
   getRecentActivity: (limit?: number) =>
     api.get("/analytics/recent-activity", { params: { limit } }),
   getCompletionTrend: () => api.get("/analytics/completion-trend"),
+  getBurndown: (sprintId: string) => api.get(`/analytics/burndown/${sprintId}`),
 };
 
 // Attachments

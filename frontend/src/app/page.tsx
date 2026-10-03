@@ -1,15 +1,23 @@
 "use client";
 
 import React from "react";
-import { formatDistanceToNow } from "date-fns";
+import Link from "next/link";
+import { format, formatDistanceToNow } from "date-fns";
 import {
   Activity,
   AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpRight,
+  Calendar,
   CheckCircle2,
+  CheckSquare,
   Clock,
+  Flame,
   FolderKanban,
   Layers,
   ListTodo,
+  Minus,
   Users,
   Zap,
 } from "lucide-react";
@@ -28,8 +36,10 @@ import {
 } from "recharts";
 
 import { AppLayout } from "@/components/layout/AppLayout";
+import { TaskDetailDialog } from "@/components/kanban/task-detail-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -38,6 +48,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/context/auth-context";
 import {
   useDashboardKpis,
   useMemberWorkload,
@@ -46,8 +57,59 @@ import {
   useSprintVelocity,
   useStatusDistribution,
 } from "@/hooks/use-analytics";
+import { Task, useTasks } from "@/hooks/use-tasks";
 
 const emptySubscribe = () => () => {};
+
+function getPriorityIcon(priority: string) {
+  switch (priority.toUpperCase()) {
+    case "URGENT":
+      return <Flame className="size-3.5 text-rose-500" />;
+    case "HIGH":
+      return <ArrowUp className="size-3.5 text-amber-500" />;
+    case "MEDIUM":
+      return <Minus className="size-3.5 text-yellow-500" />;
+    case "LOW":
+      return <ArrowDown className="size-3.5 text-blue-500" />;
+    default:
+      return null;
+  }
+}
+
+function getStatusBadge(status: string) {
+  switch (status.toUpperCase()) {
+    case "DONE":
+      return (
+        <Badge className="border-emerald-500/20 bg-emerald-500/10 text-[10px] text-emerald-600 dark:text-emerald-400">
+          DONE
+        </Badge>
+      );
+    case "IN_PROGRESS":
+      return (
+        <Badge className="border-amber-500/20 bg-amber-500/10 text-[10px] text-amber-600 dark:text-amber-400">
+          IN PROGRESS
+        </Badge>
+      );
+    case "IN_REVIEW":
+      return (
+        <Badge className="border-blue-500/20 bg-blue-500/10 text-[10px] text-blue-600 dark:text-blue-400">
+          IN REVIEW
+        </Badge>
+      );
+    case "TODO":
+      return (
+        <Badge variant="outline" className="text-[10px]">
+          TO DO
+        </Badge>
+      );
+    default:
+      return (
+        <Badge variant="secondary" className="text-[10px]">
+          {status.replace("_", " ")}
+        </Badge>
+      );
+  }
+}
 
 export default function DashboardPage() {
   const mounted = React.useSyncExternalStore(
@@ -55,6 +117,17 @@ export default function DashboardPage() {
     () => true,
     () => false
   );
+
+  const { user } = useAuth();
+  const { data: myTasksData, isLoading: loadingMyTasks } = useTasks({
+    assignees: user?.id ? [user.id] : undefined,
+    limit: 6,
+    sortBy: "createdAt",
+    sortOrder: "desc",
+  });
+  const myTasks = myTasksData?.items ?? [];
+  const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
+  const [detailOpen, setDetailOpen] = React.useState(false);
 
   const { data: kpis, isLoading: loadingKpis } = useDashboardKpis();
   const { data: statusData = [], isLoading: loadingStatus } =
@@ -478,7 +551,113 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Third Row: Recent Audit Activity */}
+        {/* Third Row: My Assigned Tasks */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <div className="flex items-center gap-2">
+              <CheckSquare className="size-5 text-primary" />
+              <div>
+                <CardTitle className="text-base font-semibold">
+                  My Assigned Tasks
+                </CardTitle>
+                <CardDescription>
+                  Tasks currently assigned to you across all projects
+                </CardDescription>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-xs font-normal">
+                {loadingMyTasks ? "..." : `${myTasks.length} Assigned`}
+              </Badge>
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className="h-8 gap-1 text-xs"
+              >
+                <Link href="/tasks">
+                  View All
+                  <ArrowUpRight className="size-3.5" />
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {loadingMyTasks ? (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-28 w-full rounded-lg" />
+                ))}
+              </div>
+            ) : myTasks.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <div className="mb-2 rounded-full bg-emerald-500/10 p-3 text-emerald-500">
+                  <CheckCircle2 className="size-6" />
+                </div>
+                <p className="text-sm font-medium text-foreground">
+                  You are all caught up!
+                </p>
+                <p className="mt-0.5 max-w-xs text-xs text-muted-foreground">
+                  No active tasks are currently assigned to you. Check the boards
+                  or create a new task.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  asChild
+                  className="mt-4 text-xs"
+                >
+                  <Link href="/board">Go to Board</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {myTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    onClick={() => {
+                      setSelectedTask(task);
+                      setDetailOpen(true);
+                    }}
+                    className="group relative flex cursor-pointer flex-col justify-between rounded-lg border border-border/50 bg-card p-3.5 text-xs transition-all hover:border-primary/50 hover:shadow-sm"
+                  >
+                    <div>
+                      <div className="mb-2 flex items-center justify-between gap-1">
+                        <span className="font-mono text-[11px] font-bold text-primary">
+                          {task.project?.key}-{task.taskNumber}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {getPriorityIcon(task.priority)}
+                          {getStatusBadge(task.status)}
+                        </div>
+                      </div>
+                      <h4 className="line-clamp-2 font-medium text-foreground transition-colors group-hover:text-primary">
+                        {task.title}
+                      </h4>
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2 text-[11px] text-muted-foreground">
+                      <span
+                        className="max-w-30 truncate"
+                        title={task.project?.name}
+                      >
+                        {task.project?.name}
+                      </span>
+                      {task.dueDate && (
+                        <span className="inline-flex items-center gap-1 text-[10px]">
+                          <Calendar className="size-3" />
+                          {format(new Date(task.dueDate), "MMM d")}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Fourth Row: Recent Audit Activity */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-3">
             <div className="flex items-center gap-2">
@@ -610,6 +789,12 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <TaskDetailDialog
+        task={selectedTask}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+      />
     </AppLayout>
   );
 }

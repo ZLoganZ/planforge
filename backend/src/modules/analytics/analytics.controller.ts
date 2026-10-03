@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../../common/decorators/index.js';
@@ -52,5 +52,11 @@ export class AnalyticsController {
   @ApiOperation({ summary: 'Tasks completed per day (last 30 days)' })
   getCompletionTrend() {
     return this.analyticsService.getCompletionTrend();
+  }
+
+  @Get('burndown/:sprintId')
+  @ApiOperation({ summary: 'Sprint burndown chart data' })
+  getSprintBurndown(@Param('sprintId') sprintId: string) {
+    return this.analyticsService.getSprintBurndown(sprintId);
   }
 }

@@ -7,6 +7,7 @@ import {
   CheckSquare,
   FolderKanban,
   Layers,
+  Settings,
   Users,
 } from "lucide-react";
 
@@ -146,6 +147,18 @@ export default function ProjectsPage() {
                           className="h-8 gap-1 text-xs"
                         >
                           <Layers className="size-3.5" />
+                        </Button>
+                      </Link>
+                      <Link
+                        href={`/projects/${project.id}/settings`}
+                        title="Project Settings"
+                      >
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 gap-1 text-xs"
+                        >
+                          <Settings className="size-3.5" />
                         </Button>
                       </Link>
                     </div>

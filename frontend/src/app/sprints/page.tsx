@@ -36,16 +36,25 @@ import {
   Plus,
   Sparkles,
   Trash2,
+  TrendingDown,
 } from "lucide-react";
 
 import { KanbanCard, KanbanCardOverlay } from "@/components/kanban/kanban-card";
 import { TaskDetailDialog } from "@/components/kanban/task-detail-dialog";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { BurndownChart } from "@/components/sprints/burndown-chart";
 import { SprintModal } from "@/components/sprints/sprint-modal";
 import { TaskCreateModal } from "@/components/tasks/task-create-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -109,6 +118,7 @@ export default function SprintsPage() {
   const [selectedSprintId, setSelectedSprintId] = React.useState<string>("");
   const [sprintModalOpen, setSprintModalOpen] = React.useState(false);
   const [sprintToEdit, setSprintToEdit] = React.useState<Sprint | null>(null);
+  const [isBurndownOpen, setIsBurndownOpen] = React.useState(false);
   const [selectedTaskForDetail, setSelectedTaskForDetail] =
     React.useState<Task | null>(null);
   const [activeTask, setActiveTask] = React.useState<Task | null>(null);
@@ -600,6 +610,17 @@ export default function SprintsPage() {
                   )}
 
                   <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsBurndownOpen(true)}
+                    className="h-8 gap-1.5 text-xs"
+                    title="View Sprint Burndown"
+                  >
+                    <TrendingDown className="size-3.5 text-primary" />
+                    Burndown
+                  </Button>
+
+                  <Button
                     variant="ghost"
                     size="icon"
                     className="size-8 text-muted-foreground hover:text-foreground"
@@ -879,6 +900,25 @@ export default function SprintsPage() {
           projectId={effectiveProjectId}
           sprintToEdit={sprintToEdit}
         />
+
+        {/* Sprint Burndown Dialog */}
+        <Dialog open={isBurndownOpen} onOpenChange={setIsBurndownOpen}>
+          <DialogContent className="border-border bg-card/95 backdrop-blur-xl sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <TrendingDown className="size-5 text-primary" />
+                {selectedSprint?.name} Burndown
+              </DialogTitle>
+              <DialogDescription>
+                Compare actual completed story points against the ideal burn
+                trajectory across sprint duration.
+              </DialogDescription>
+            </DialogHeader>
+            {selectedSprint && (
+              <BurndownChart sprintId={selectedSprint.id} />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
