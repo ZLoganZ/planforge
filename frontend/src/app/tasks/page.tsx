@@ -51,7 +51,7 @@ export default function TasksPage() {
               )}
               Export CSV
             </Button>
-            <TaskCreateModal projectId="global">
+            <TaskCreateModal>
               <Button>
                 <ListTodo className="mr-2 size-4" />
                 Create Task

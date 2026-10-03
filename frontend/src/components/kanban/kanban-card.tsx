@@ -8,6 +8,7 @@ import {
   ArrowDown,
   ArrowUp,
   Calendar,
+  CornerDownRight,
   Flame,
   GripVertical,
   Layers,
@@ -73,6 +74,15 @@ export const KanbanCardView = React.memo(function KanbanCardView({
                 ? `${task.project.key}-${task.taskNumber}`
                 : `PF-${task.taskNumber}`}
             </span>
+            {task.parentTask && (
+              <span
+                className="flex items-center gap-0.5 rounded bg-primary/10 px-1 py-0.5 font-sans text-[9px] font-medium text-primary"
+                title={`Subtask of ${task.parentTask.title}`}
+              >
+                <CornerDownRight className="size-2.5" />
+                <span>Subtask</span>
+              </span>
+            )}
             {task.priority && task.priority !== "NONE" && (
               <span
                 className="flex items-center gap-0.5 rounded bg-muted/60 px-1 py-0.5"
@@ -100,6 +110,21 @@ export const KanbanCardView = React.memo(function KanbanCardView({
             </div>
           </div>
         </div>
+
+        {/* Parent Task reference if subtask */}
+        {task.parentTask && (
+          <div className="flex items-center gap-1 truncate text-[10px] text-muted-foreground">
+            <CornerDownRight className="size-3 shrink-0 text-primary" />
+            <span className="truncate">
+              Subtask of{" "}
+              <span className="font-mono font-medium text-foreground">
+                {task.project?.key
+                  ? `${task.project.key}-${task.parentTask.taskNumber}`
+                  : `PF-${task.parentTask.taskNumber}`}
+              </span>
+            </span>
+          </div>
+        )}
 
         {/* Title */}
         <h4 className="line-clamp-2 text-sm leading-snug font-medium text-foreground">

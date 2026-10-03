@@ -1,25 +1,34 @@
 "use client";
 
 import React, { useState } from "react";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import {
+  AlertCircle,
+  Check,
+  CheckCircle2,
+  Clock,
+  Copy,
   Crown,
   Eye,
+  Loader2,
   Mail,
   MoreVertical,
+  Pencil,
   Plus,
   RefreshCw,
   Search,
+  Send,
   Shield,
-  ShieldAlert,
   ShieldCheck,
+  Trash2,
   User,
   Users as UsersIcon,
   UserX,
 } from "lucide-react";
 
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { MemberModal } from "@/components/members/member-modal";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,26 +46,51 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "@/components/ui/sonner";
 import { useAuth } from "@/context/auth-context";
+import {
+  useCreateInvitation,
+  useInvitations,
+  useResendInvitation,
+  useRevokeInvitation,
+} from "@/hooks/use-invitations";
 import { UserMember, useUpdateUser, useUsers } from "@/hooks/use-members";
-import { cn } from "@/lib/utils";
+import { cn, getErrorMessage } from "@/lib/utils";
 
 export default function MembersPage() {
   const { user: currentUser } = useAuth();
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [selectedMemberForEdit, setSelectedMemberForEdit] =
+    useState<UserMember | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteFirstName, setInviteFirstName] = useState("");
-  const [inviteLastName, setInviteLastName] = useState("");
   const [inviteRole, setInviteRole] = useState<
     "OWNER" | "ADMIN" | "MEMBER" | "VIEWER"
   >("MEMBER");
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [createdInviteUrl, setCreatedInviteUrl] = useState<string | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const { data, isLoading, isFetching, refetch } = useUsers({
     search: search || undefined,
     role: roleFilter || undefined,
   });
+
+  const { data: invitations = [], refetch: refetchInvitations } =
+    useInvitations();
+  const createInvite = useCreateInvitation();
+  const resendInvite = useResendInvitation();
+  const revokeInvite = useRevokeInvitation();
 
   const updateUser = useUpdateUser();
 
@@ -99,29 +133,47 @@ export default function MembersPage() {
     }
   };
 
-  const handleRoleChange = (userId: string, newRole: string) => {
-    updateUser.mutate({
-      id: userId,
-      data: { role: newRole },
-    });
+  const handleToggleActive = async (user: UserMember) => {
+    try {
+      await updateUser.mutateAsync({
+        id: user.id,
+        data: { isActive: !user.isActive },
+      });
+      toast.success(
+        `User ${user.firstName} ${user.lastName} ${!user.isActive ? "activated" : "deactivated"}`
+      );
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Failed to update member status."));
+    }
   };
 
-  const handleToggleActive = (user: UserMember) => {
-    updateUser.mutate({
-      id: user.id,
-      data: { isActive: !user.isActive },
-    });
-  };
-
-  const handleInviteSubmit = (e: React.SubmitEvent) => {
-    e.preventDefault();
-    if (!inviteEmail) return;
-    // In our backend, mock invite adds or updates user
+  const handleCloseInviteDialog = () => {
     setIsInviteOpen(false);
     setInviteEmail("");
-    setInviteFirstName("");
-    setInviteLastName("");
     setInviteRole("MEMBER");
+    setInviteError(null);
+    setCreatedInviteUrl(null);
+    setCopiedLink(false);
+  };
+
+  const handleInviteSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail.trim()) return;
+    setInviteError(null);
+
+    try {
+      const res = await createInvite.mutateAsync({
+        email: inviteEmail.trim(),
+        role: inviteRole,
+      });
+
+      const inviteUrl = `${window.location.origin}/invite/accept?token=${res.token}`;
+      setCreatedInviteUrl(inviteUrl);
+      void refetchInvitations();
+      toast.success(`Invitation sent to ${inviteEmail.trim()}`);
+    } catch (err: unknown) {
+      setInviteError(getErrorMessage(err, "Failed to invite member."));
+    }
   };
 
   const ownerCount = users.filter((u) => u.role === "OWNER").length;
@@ -253,17 +305,31 @@ export default function MembersPage() {
             />
           </div>
 
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="h-9 rounded-lg border border-input bg-background/50 px-3 text-xs text-foreground focus:ring-1 focus:ring-ring focus:outline-hidden"
+          <Select
+            value={roleFilter || "ALL"}
+            onValueChange={(val) => setRoleFilter(val === "ALL" ? "" : val)}
           >
-            <option value="">All Roles</option>
-            <option value="OWNER">OWNER</option>
-            <option value="ADMIN">ADMIN</option>
-            <option value="MEMBER">MEMBER</option>
-            <option value="VIEWER">VIEWER</option>
-          </select>
+            <SelectTrigger className="h-9 w-32.5 bg-background/50 text-xs">
+              <SelectValue placeholder="All Roles" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL" className="text-xs">
+                All Roles
+              </SelectItem>
+              <SelectItem value="OWNER" className="text-xs">
+                OWNER
+              </SelectItem>
+              <SelectItem value="ADMIN" className="text-xs">
+                ADMIN
+              </SelectItem>
+              <SelectItem value="MEMBER" className="text-xs">
+                MEMBER
+              </SelectItem>
+              <SelectItem value="VIEWER" className="text-xs">
+                VIEWER
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Members Table */}
@@ -312,13 +378,29 @@ export default function MembersPage() {
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-3">
                             <Avatar className="size-9 border border-border">
+                              <AvatarImage
+                                src={member.avatarUrl || ""}
+                                alt={`${member.firstName} ${member.lastName}`}
+                              />
                               <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
                                 {initials}
                               </AvatarFallback>
                             </Avatar>
                             <div>
                               <div className="flex items-center gap-2">
-                                <span className="font-semibold text-foreground">
+                                <span
+                                  onClick={() => {
+                                    if (canManage) {
+                                      setSelectedMemberForEdit(member);
+                                      setIsEditModalOpen(true);
+                                    }
+                                  }}
+                                  className={cn(
+                                    "font-semibold text-foreground",
+                                    canManage &&
+                                      "cursor-pointer hover:text-primary hover:underline"
+                                  )}
+                                >
                                   {member.firstName} {member.lastName}
                                 </span>
                                 {isSelf && (
@@ -340,23 +422,7 @@ export default function MembersPage() {
 
                         {/* Role */}
                         <td className="px-4 py-3.5">
-                          {canManage && !isSelf ? (
-                            <select
-                              value={member.role}
-                              onChange={(e) =>
-                                handleRoleChange(member.id, e.target.value)
-                              }
-                              disabled={updateUser.isPending}
-                              className="h-8 rounded-lg border border-border bg-background px-2.5 text-xs font-medium text-foreground focus:ring-1 focus:ring-ring focus:outline-hidden"
-                            >
-                              <option value="OWNER">OWNER</option>
-                              <option value="ADMIN">ADMIN</option>
-                              <option value="MEMBER">MEMBER</option>
-                              <option value="VIEWER">VIEWER</option>
-                            </select>
-                          ) : (
-                            getRoleBadge(member.role)
-                          )}
+                          {getRoleBadge(member.role)}
                         </td>
 
                         {/* Status */}
@@ -382,21 +448,28 @@ export default function MembersPage() {
                         {/* Actions */}
                         {canManage && (
                           <td className="px-4 py-3.5 text-right">
-                            {!isSelf && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="size-8 text-muted-foreground hover:text-foreground"
-                                  >
-                                    <MoreVertical className="size-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                  align="end"
-                                  className="w-44"
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="size-8 text-muted-foreground hover:text-foreground"
                                 >
+                                  <MoreVertical className="size-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-44">
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedMemberForEdit(member);
+                                    setIsEditModalOpen(true);
+                                  }}
+                                  className="gap-2 text-xs"
+                                >
+                                  <Pencil className="size-3.5 text-primary" />
+                                  Edit Member
+                                </DropdownMenuItem>
+                                {!isSelf && (
                                   <DropdownMenuItem
                                     onClick={() => handleToggleActive(member)}
                                     className="gap-2 text-xs"
@@ -413,9 +486,9 @@ export default function MembersPage() {
                                       </>
                                     )}
                                   </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </td>
                         )}
                       </tr>
@@ -427,8 +500,156 @@ export default function MembersPage() {
           )}
         </div>
 
+        {/* Pending Invitations Section */}
+        {canManage && invitations.length > 0 && (
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center gap-2">
+              <Mail className="size-4 text-primary" />
+              <h2 className="text-sm font-semibold tracking-tight text-foreground">
+                Pending Invitations (
+                {invitations.filter((i) => i.status === "PENDING").length})
+              </h2>
+            </div>
+
+            <div className="overflow-hidden rounded-xl border border-border/70 bg-card/60 shadow-xs">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-border/70 bg-muted/40 text-[11px] font-semibold text-muted-foreground uppercase">
+                    <th className="px-4 py-3">Recipient</th>
+                    <th className="px-4 py-3">Assigned Role</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Invited By</th>
+                    <th className="px-4 py-3">Expires</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40 text-sm">
+                  {invitations.map((inv) => (
+                    <tr
+                      key={inv.id}
+                      className="transition-colors hover:bg-accent/25"
+                    >
+                      <td className="px-4 py-3.5 font-medium text-foreground">
+                        <div className="flex items-center gap-2">
+                          <Mail className="size-3.5 text-muted-foreground" />
+                          <span>{inv.email}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5">{getRoleBadge(inv.role)}</td>
+                      <td className="px-4 py-3.5">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "gap-1 text-[10px] font-medium",
+                            inv.status === "PENDING" &&
+                              "border-amber-500/30 bg-amber-500/10 text-amber-500",
+                            inv.status === "ACCEPTED" &&
+                              "border-emerald-500/30 bg-emerald-500/10 text-emerald-500",
+                            inv.status === "EXPIRED" &&
+                              "border-destructive/30 bg-destructive/10 text-destructive"
+                          )}
+                        >
+                          <Clock className="size-2.5" />
+                          {inv.status}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3.5 text-xs text-muted-foreground">
+                        {inv.invitedBy
+                          ? `${inv.invitedBy.firstName} ${inv.invitedBy.lastName}`
+                          : "Admin"}
+                      </td>
+                      <td className="px-4 py-3.5 text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(inv.expiresAt), {
+                          addSuffix: true,
+                        })}
+                      </td>
+                      <td className="px-4 py-3.5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const url = `${window.location.origin}/invite/accept?token=${inv.token}`;
+                              void navigator.clipboard.writeText(url);
+                              toast.success(
+                                "Invitation link copied to clipboard"
+                              );
+                            }}
+                            title="Copy Invitation Link"
+                            className="h-7 px-2 text-xs"
+                          >
+                            <Copy className="mr-1 size-3.5" />
+                            Copy Link
+                          </Button>
+                          {inv.status === "PENDING" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={resendInvite.isPending}
+                              onClick={async () => {
+                                try {
+                                  await resendInvite.mutateAsync(inv.id);
+                                  toast.success(
+                                    `Invitation resent to ${inv.email}`
+                                  );
+                                } catch (err) {
+                                  toast.error(
+                                    getErrorMessage(
+                                      err,
+                                      "Failed to resend invitation"
+                                    )
+                                  );
+                                }
+                              }}
+                              title="Resend email invitation"
+                              className="h-7 px-2 text-xs text-primary hover:text-primary"
+                            >
+                              <Send className="mr-1 size-3.5" />
+                              Resend
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={revokeInvite.isPending}
+                            onClick={async () => {
+                              try {
+                                await revokeInvite.mutateAsync(inv.id);
+                                toast.success(
+                                  `Invitation for ${inv.email} revoked`
+                                );
+                              } catch (err) {
+                                toast.error(
+                                  getErrorMessage(
+                                    err,
+                                    "Failed to revoke invitation"
+                                  )
+                                );
+                              }
+                            }}
+                            title="Revoke invitation"
+                            className="size-7 text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* Invite Member Dialog */}
-        <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
+        <Dialog
+          open={isInviteOpen}
+          onOpenChange={(open) => {
+            if (!open) handleCloseInviteDialog();
+            else setIsInviteOpen(true);
+          }}
+        >
           <DialogContent className="border-border bg-card/95 backdrop-blur-xl sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -436,104 +657,171 @@ export default function MembersPage() {
                 Invite Team Member
               </DialogTitle>
               <DialogDescription>
-                Send an invitation to add a new collaborator to the workspace
-                with assigned RBAC permissions.
+                Send an email invitation to join this workspace with assigned
+                role and permissions.
               </DialogDescription>
             </DialogHeader>
 
-            <form onSubmit={handleInviteSubmit} className="space-y-4 py-2">
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-foreground">
-                  Email Address
-                </label>
-                <Input
-                  type="email"
-                  required
-                  placeholder="colleague@company.com"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  className="h-9"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-foreground">
-                    First Name
-                  </label>
-                  <Input
-                    placeholder="Alex"
-                    value={inviteFirstName}
-                    onChange={(e) => setInviteFirstName(e.target.value)}
-                    className="h-9"
-                  />
+            {createdInviteUrl ? (
+              <div className="space-y-4 py-3">
+                <div className="flex flex-col items-center justify-center space-y-2 text-center">
+                  <div className="flex size-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500">
+                    <CheckCircle2 className="size-6" />
+                  </div>
+                  <h3 className="text-base font-semibold text-foreground">
+                    Invitation Sent!
+                  </h3>
+                  <p className="max-w-xs text-xs text-muted-foreground">
+                    An email has been dispatched to{" "}
+                    <strong>{inviteEmail}</strong>. You can also share the
+                    direct invite link below:
+                  </p>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-foreground">
-                    Last Name
-                  </label>
+
+                <div className="flex items-center gap-2">
                   <Input
-                    placeholder="Morgan"
-                    value={inviteLastName}
-                    onChange={(e) => setInviteLastName(e.target.value)}
-                    className="h-9"
+                    value={createdInviteUrl}
+                    readOnly
+                    className="h-9 bg-muted/50 font-mono text-xs"
                   />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(createdInviteUrl);
+                      setCopiedLink(true);
+                      toast.success("Invitation link copied to clipboard");
+                      setTimeout(() => setCopiedLink(false), 2000);
+                    }}
+                    className="shrink-0 gap-1.5"
+                  >
+                    {copiedLink ? (
+                      <>
+                        <Check className="size-3.5 text-emerald-500" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="size-3.5" />
+                        Copy Link
+                      </>
+                    )}
+                  </Button>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-foreground">
-                  Role
-                </label>
-                <select
-                  value={inviteRole}
-                  onChange={(e) =>
-                    setInviteRole(
-                      e.target.value as "OWNER" | "ADMIN" | "MEMBER" | "VIEWER"
-                    )
-                  }
-                  className="h-9 w-full rounded-lg border border-input bg-background px-3 text-xs text-foreground focus:ring-1 focus:ring-ring focus:outline-hidden"
-                >
-                  <option value="MEMBER">
-                    MEMBER (Can create, edit, and assign tasks)
-                  </option>
-                  <option value="ADMIN">
-                    ADMIN (Can manage projects, sprints, and members)
-                  </option>
-                  <option value="VIEWER">
-                    VIEWER (Read-only access across workspace)
-                  </option>
-                  <option value="OWNER">
-                    OWNER (Full workspace access and billing)
-                  </option>
-                </select>
+                <DialogFooter className="pt-2">
+                  <Button
+                    size="sm"
+                    onClick={handleCloseInviteDialog}
+                    className="w-full"
+                  >
+                    Done
+                  </Button>
+                </DialogFooter>
               </div>
+            ) : (
+              <>
+                {inviteError && (
+                  <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+                    <AlertCircle className="size-4 shrink-0" />
+                    <span>{inviteError}</span>
+                  </div>
+                )}
 
-              <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-muted-foreground">
-                <ShieldAlert className="mt-0.5 size-4 shrink-0 text-amber-400" />
-                <span>
-                  The invited member will receive an invitation email and
-                  immediate access according to the specified role.
-                </span>
-              </div>
+                <form onSubmit={handleInviteSubmit} className="space-y-4 py-2">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">
+                      Email Address *
+                    </Label>
+                    <Input
+                      type="email"
+                      required
+                      placeholder="colleague@company.com"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      className="h-9"
+                    />
+                  </div>
 
-              <DialogFooter className="pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsInviteOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" size="sm" className="gap-1.5">
-                  <Mail className="size-3.5" />
-                  Send Invitation
-                </Button>
-              </DialogFooter>
-            </form>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold">Role *</Label>
+                    <Select
+                      value={inviteRole}
+                      onValueChange={(val) =>
+                        setInviteRole(
+                          val as "OWNER" | "ADMIN" | "MEMBER" | "VIEWER"
+                        )
+                      }
+                    >
+                      <SelectTrigger className="h-9 w-full text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="MEMBER" className="text-xs">
+                          MEMBER (Can create, edit, and assign tasks)
+                        </SelectItem>
+                        <SelectItem value="ADMIN" className="text-xs">
+                          ADMIN (Can manage projects, sprints, and members)
+                        </SelectItem>
+                        <SelectItem value="VIEWER" className="text-xs">
+                          VIEWER (Read-only access across workspace)
+                        </SelectItem>
+                        <SelectItem value="OWNER" className="text-xs">
+                          OWNER (Full workspace access and billing)
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
+                    <Mail className="mt-0.5 size-4 shrink-0 text-primary" />
+                    <span>
+                      An email containing a secure 7-day onboarding link will be
+                      sent to this address.
+                    </span>
+                  </div>
+
+                  <DialogFooter className="pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCloseInviteDialog}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      size="sm"
+                      className="gap-1.5"
+                      disabled={createInvite.isPending || !inviteEmail.trim()}
+                    >
+                      {createInvite.isPending ? (
+                        <>
+                          <Loader2 className="size-3.5 animate-spin" />
+                          Sending Invitation...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="size-3.5" />
+                          Send Invitation
+                        </>
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </>
+            )}
           </DialogContent>
         </Dialog>
+
+        {/* Edit Member Modal */}
+        <MemberModal
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          member={selectedMemberForEdit}
+          currentUserId={currentUser?.id}
+        />
       </div>
     </AppLayout>
   );

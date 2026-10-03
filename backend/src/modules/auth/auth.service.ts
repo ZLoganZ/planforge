@@ -195,6 +195,27 @@ export class AuthService {
     return user;
   }
 
+  async generateAuthResponse(user: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    avatarUrl?: string | null;
+  }) {
+    const tokens = await this.generateTokens(user.id, user.email);
+    await this.storeRefreshToken(user.id, tokens.refreshToken);
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatarUrl: user.avatarUrl ?? null,
+      },
+      ...tokens,
+    };
+  }
+
   // ─── Helpers ───────────────────────────────────────────────
 
   private async generateTokens(userId: string, email: string) {

@@ -107,6 +107,11 @@ export class CreateTaskDto {
   @IsNotEmpty()
   projectId!: string;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  parentTaskId?: string;
+
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
   @IsArray()
@@ -160,6 +165,11 @@ export class UpdateTaskDto {
   @IsOptional()
   @IsDateString()
   startDate?: string | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  parentTaskId?: string | null;
 
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()

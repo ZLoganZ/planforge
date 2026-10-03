@@ -73,6 +73,13 @@ enum JobStatus {
   FAILED
 }
 
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
 // ============================================
 // MODELS
 // ============================================
@@ -98,6 +105,7 @@ model User {
   auditLogs        AuditLog[]
   notifications    Notification[]
   importJobs       ImportJob[]
+  sentInvitations  WorkspaceInvitation[] @relation("SentInvitations")
 
   @@index([email])
   @@map("users")
@@ -125,8 +133,9 @@ model Workspace {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  members  WorkspaceMember[]
-  projects Project[]
+  members     WorkspaceMember[]
+  projects    Project[]
+  invitations WorkspaceInvitation[]
 
   @@map("workspaces")
 }
@@ -143,6 +152,27 @@ model WorkspaceMember {
 
   @@unique([workspaceId, userId])
   @@map("workspace_members")
+}
+
+model WorkspaceInvitation {
+  id          String           @id @default(uuid())
+  email       String
+  role        Role             @default(MEMBER)
+  token       String           @unique
+  status      InvitationStatus @default(PENDING)
+  expiresAt   DateTime
+  invitedById String
+  workspaceId String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  invitedBy User      @relation("SentInvitations", fields: [invitedById], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([workspaceId])
+  @@index([token])
+  @@map("workspace_invitations")
 }
 
 model Project {

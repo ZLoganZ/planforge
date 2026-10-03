@@ -75,6 +75,25 @@ export function useUpdateUser() {
   });
 }
 
+export function useInviteUser() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: {
+      email: string;
+      firstName?: string;
+      lastName?: string;
+      role?: string;
+    }) => {
+      const res = await usersApi.invite(data);
+      return res.data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["users"] });
+      void queryClient.invalidateQueries({ queryKey: ["project-members"] });
+    },
+  });
+}
+
 export function useAddProjectMember() {
   const queryClient = useQueryClient();
   return useMutation({

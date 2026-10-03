@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/auth-context";
+import { getErrorMessage } from "@/lib/utils";
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -37,11 +38,7 @@ export default function RegisterPage() {
       await register({ email, password, firstName, lastName });
       router.push("/login");
     } catch (err) {
-      const axiosError = err as import("axios").AxiosError<{ message: string }>;
-      setError(
-        axiosError?.response?.data?.message ||
-          "Registration failed. Please try again."
-      );
+      setError(getErrorMessage(err, "Registration failed. Please try again."));
     } finally {
       setIsLoading(false);
     }
@@ -141,17 +138,19 @@ export default function RegisterPage() {
                   minLength={6}
                   autoComplete="new-password"
                 />
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                  className="absolute top-1/2 right-1 size-7 -translate-y-1/2 text-muted-foreground hover:bg-transparent hover:text-foreground"
                 >
                   {showPassword ? (
                     <EyeOff className="size-4" />
                   ) : (
                     <Eye className="size-4" />
                   )}
-                </button>
+                </Button>
               </div>
             </div>
           </CardContent>

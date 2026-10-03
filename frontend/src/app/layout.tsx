@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 
+import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/auth-context";
 import { SocketProvider } from "@/context/socket-context";
 import { QueryProvider } from "@/lib/query-provider";
@@ -35,7 +36,10 @@ export default function RootLayout({
         >
           <QueryProvider>
             <AuthProvider>
-              <SocketProvider>{children}</SocketProvider>
+              <SocketProvider>
+                {children}
+                <Toaster position="bottom-right" />
+              </SocketProvider>
             </AuthProvider>
           </QueryProvider>
         </ThemeProvider>

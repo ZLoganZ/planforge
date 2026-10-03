@@ -12,6 +12,10 @@ import { AnalyticsModule } from './modules/analytics/analytics.module.js';
 import { AttachmentsModule } from './modules/attachments/attachments.module.js';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
+import { CommentsModule } from './modules/comments/comments.module.js';
+import { EmailModule } from './modules/email/email.module.js';
+import { ImportExportModule } from './modules/import-export/import-export.module.js';
+import { InvitationsModule } from './modules/invitations/invitations.module.js';
 import { LabelsModule } from './modules/labels/labels.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { ProjectsModule } from './modules/projects/projects.module.js';
@@ -19,6 +23,7 @@ import { SprintsModule } from './modules/sprints/sprints.module.js';
 import { StorageModule } from './modules/storage/storage.module.js';
 import { TasksModule } from './modules/tasks/tasks.module.js';
 import { UsersModule } from './modules/users/users.module.js';
+import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
 
 @Module({
   imports: [
@@ -26,8 +31,11 @@ import { UsersModule } from './modules/users/users.module.js';
       isGlobal: true,
     }),
     PrismaModule,
+    EmailModule,
     AuthModule,
     UsersModule,
+    WorkspacesModule,
+    InvitationsModule,
     ProjectsModule,
     LabelsModule,
     TasksModule,
@@ -37,6 +45,8 @@ import { UsersModule } from './modules/users/users.module.js';
     AnalyticsModule,
     StorageModule,
     AttachmentsModule,
+    CommentsModule,
+    ImportExportModule,
   ],
   controllers: [AppController],
   providers: [

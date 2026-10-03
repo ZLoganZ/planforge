@@ -5,11 +5,13 @@ import {
   Get,
   Param,
   Patch,
+  Post,
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { QueryUsersDto, UpdateUserDto } from './dto/users.dto.js';
+import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
+import { InviteUserDto, QueryUsersDto, UpdateUserDto } from './dto/users.dto.js';
 import { UsersService } from './users.service.js';
 
 @ApiTags('Users')
@@ -22,6 +24,12 @@ export class UsersController {
   @ApiOperation({ summary: 'List all users (paginated, filterable)' })
   findAll(@Query() query: QueryUsersDto) {
     return this.usersService.findAll(query);
+  }
+
+  @Post('invite')
+  @ApiOperation({ summary: 'Invite or add user to workspace' })
+  invite(@CurrentUser('id') currentUserId: string, @Body() dto: InviteUserDto) {
+    return this.usersService.invite(dto, currentUserId);
   }
 
   @Get(':id')

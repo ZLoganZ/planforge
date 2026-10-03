@@ -18,6 +18,7 @@ import {
   Zap,
 } from "lucide-react";
 
+import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -90,6 +91,11 @@ export function Sidebar() {
             PlanForge
           </span>
         )}
+      </div>
+
+      {/* Workspace Switcher */}
+      <div className="border-b border-border p-2">
+        <WorkspaceSwitcher collapsed={collapsed} />
       </div>
 
       {/* Navigation */}

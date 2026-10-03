@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Dialog,
   DialogContent,
@@ -36,18 +37,14 @@ function SprintForm({
 
   const [name, setName] = React.useState(sprintToEdit?.name || "");
   const [goal, setGoal] = React.useState(sprintToEdit?.goal || "");
-  const [startDate, setStartDate] = React.useState(
-    sprintToEdit?.startDate
-      ? new Date(sprintToEdit.startDate).toISOString().split("T")[0]
-      : ""
+  const [startDate, setStartDate] = React.useState<Date | undefined>(
+    sprintToEdit?.startDate ? new Date(sprintToEdit.startDate) : undefined
   );
-  const [endDate, setEndDate] = React.useState(
-    sprintToEdit?.endDate
-      ? new Date(sprintToEdit.endDate).toISOString().split("T")[0]
-      : ""
+  const [endDate, setEndDate] = React.useState<Date | undefined>(
+    sprintToEdit?.endDate ? new Date(sprintToEdit.endDate) : undefined
   );
 
-  const handleSubmit = async (e: React.SubmitEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
@@ -56,15 +53,15 @@ function SprintForm({
         id: sprintToEdit.id,
         name,
         goal,
-        startDate: startDate ? new Date(startDate).toISOString() : undefined,
-        endDate: endDate ? new Date(endDate).toISOString() : undefined,
+        startDate: startDate ? startDate.toISOString() : undefined,
+        endDate: endDate ? endDate.toISOString() : undefined,
       });
     } else {
       await createSprint.mutateAsync({
         name,
         goal,
-        startDate: startDate ? new Date(startDate).toISOString() : undefined,
-        endDate: endDate ? new Date(endDate).toISOString() : undefined,
+        startDate: startDate ? startDate.toISOString() : undefined,
+        endDate: endDate ? endDate.toISOString() : undefined,
         projectId,
       });
     }
@@ -113,28 +110,22 @@ function SprintForm({
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label htmlFor="start-date" className="text-xs font-semibold">
-              Start Date
-            </Label>
-            <Input
-              id="start-date"
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="h-9 text-xs"
+            <Label className="text-xs font-semibold">Start Date</Label>
+            <DatePicker
+              id="sprint-start-date"
+              date={startDate}
+              onSelect={setStartDate}
+              placeholder="Pick start date"
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="end-date" className="text-xs font-semibold">
-              End Date
-            </Label>
-            <Input
-              id="end-date"
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="h-9 text-xs"
+            <Label className="text-xs font-semibold">End Date</Label>
+            <DatePicker
+              id="sprint-end-date"
+              date={endDate}
+              onSelect={setEndDate}
+              placeholder="Pick end date"
             />
           </div>
         </div>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   ArrowRight,
+  Calendar,
   CheckSquare,
   FolderKanban,
   Layers,
@@ -115,7 +116,7 @@ export default function ProjectsPage() {
 
                     <div className="flex items-center gap-2 pt-1">
                       <Link
-                        href={`/projects/${project.id}/board`}
+                        href={`/board?projectId=${project.id}`}
                         className="flex-1"
                       >
                         <Button
@@ -126,7 +127,19 @@ export default function ProjectsPage() {
                           <ArrowRight className="size-3" />
                         </Button>
                       </Link>
-                      <Link href="/sprints">
+                      <Link
+                        href={`/projects/${project.id}/timeline`}
+                        title="View Timeline"
+                      >
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 gap-1 text-xs"
+                        >
+                          <Calendar className="size-3.5" />
+                        </Button>
+                      </Link>
+                      <Link href="/sprints" title="Sprint Planning">
                         <Button
                           variant="outline"
                           size="sm"

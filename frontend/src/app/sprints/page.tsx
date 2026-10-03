@@ -3,16 +3,26 @@
 import * as React from "react";
 import {
   closestCorners,
+  CollisionDetection,
   DndContext,
   DragEndEvent,
+  DragOverEvent,
   DragOverlay,
   DragStartEvent,
   KeyboardSensor,
   PointerSensor,
+  pointerWithin,
+  rectIntersection,
+  useDroppable,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { format } from "date-fns";
 import {
   ArrowLeft,
@@ -53,6 +63,40 @@ import {
   useStartSprint,
 } from "@/hooks/use-sprints";
 import { Task, useReorderTasks, useTasks } from "@/hooks/use-tasks";
+import { cn } from "@/lib/utils";
+
+interface PaneTasks {
+  backlog: Task[];
+  sprint: Task[];
+}
+
+interface DroppablePaneProps {
+  id: string;
+  className?: string;
+  children: React.ReactNode;
+}
+
+function DroppablePane({ id, className, children }: DroppablePaneProps) {
+  const { setNodeRef, isOver } = useDroppable({
+    id,
+    data: {
+      type: "Pane",
+      paneId: id,
+    },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        className,
+        isOver && "border-primary/50 bg-primary/5 ring-2 ring-primary/40"
+      )}
+    >
+      {children}
+    </div>
+  );
+}
 
 export default function SprintsPage() {
   const { data: projectsData } = useProjects();
@@ -68,6 +112,9 @@ export default function SprintsPage() {
   const [selectedTaskForDetail, setSelectedTaskForDetail] =
     React.useState<Task | null>(null);
   const [activeTask, setActiveTask] = React.useState<Task | null>(null);
+  const [activeTaskWidth, setActiveTaskWidth] = React.useState<number | null>(
+    null
+  );
 
   const defaultProject =
     projects.find((p) => (p._count?.tasks ?? 0) > 0) || projects[0];
@@ -100,11 +147,25 @@ export default function SprintsPage() {
   const completeSprint = useCompleteSprint();
   const deleteSprint = useDeleteSprint();
 
-  const allTasks = Array.isArray(allTasksData?.items) ? allTasksData.items : [];
+  const allTasks = React.useMemo(
+    () => (Array.isArray(allTasksData?.items) ? allTasksData.items : []),
+    [allTasksData]
+  );
 
-  // Split tasks into Backlog (no sprintId or sprintId not matching selectedSprint) and Selected Sprint
-  const backlogTasks = allTasks.filter((t) => !t.sprintId);
-  const sprintTasks = allTasks.filter((t) => t.sprintId === effectiveSprintId);
+  // Split tasks into Backlog and Selected Sprint
+  const derivedPanes = React.useMemo<PaneTasks>(
+    () => ({
+      backlog: allTasks.filter((t) => !t.sprintId),
+      sprint: allTasks.filter((t) => t.sprintId === effectiveSprintId),
+    }),
+    [allTasks, effectiveSprintId]
+  );
+
+  const [dragPanes, setDragPanes] = React.useState<PaneTasks | null>(null);
+  const currentPanes = dragPanes || derivedPanes;
+
+  const backlogTasks = currentPanes.backlog;
+  const sprintTasks = currentPanes.sprint;
 
   const backlogPoints = backlogTasks.reduce(
     (acc, t) => acc + (t.storyPoints || 0),
@@ -122,6 +183,15 @@ export default function SprintsPage() {
       ? Math.round((sprintCompletedPoints / sprintTotalPoints) * 100)
       : 0;
 
+  const backlogTaskIds = React.useMemo(
+    () => backlogTasks.map((t) => t.id),
+    [backlogTasks]
+  );
+  const sprintTaskIds = React.useMemo(
+    () => sprintTasks.map((t) => t.id),
+    [sprintTasks]
+  );
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -133,67 +203,204 @@ export default function SprintsPage() {
     })
   );
 
+  const collisionDetectionStrategy: CollisionDetection = React.useCallback(
+    (args) => {
+      const pointerCollisions = pointerWithin(args);
+      if (pointerCollisions.length > 0) {
+        return pointerCollisions;
+      }
+      const intersections = rectIntersection(args);
+      if (intersections.length > 0) {
+        return intersections;
+      }
+      return closestCorners(args);
+    },
+    []
+  );
+
   const handleDragStart = (event: DragStartEvent) => {
-    const task = allTasks.find((t) => t.id === event.active.id);
+    const activeId = event.active.id as string;
+    const current = dragPanes || derivedPanes;
+    const task =
+      current.backlog.find((t) => t.id === activeId) ||
+      current.sprint.find((t) => t.id === activeId);
+
+    const activeEl = document.querySelector(`[data-task-id="${activeId}"]`);
+    if (activeEl) {
+      setActiveTaskWidth(activeEl.getBoundingClientRect().width);
+    }
+
+    setDragPanes(current);
     if (task) setActiveTask(task);
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+    if (activeId === overId) return;
+
+    setDragPanes((prev) => {
+      const current = prev || derivedPanes;
+
+      let activePane: "backlog" | "sprint" | undefined;
+      if (current.backlog.some((t) => t.id === activeId)) {
+        activePane = "backlog";
+      } else if (current.sprint.some((t) => t.id === activeId)) {
+        activePane = "sprint";
+      }
+
+      let overPane: "backlog" | "sprint" | undefined;
+      if (
+        overId === "backlog-droppable" ||
+        current.backlog.some((t) => t.id === overId)
+      ) {
+        overPane = "backlog";
+      } else if (
+        overId === "sprint-droppable" ||
+        current.sprint.some((t) => t.id === overId)
+      ) {
+        overPane = "sprint";
+      }
+
+      if (!activePane || !overPane) return prev;
+      if (overPane === "sprint" && !effectiveSprintId) return prev;
+
+      // Case 1: Reordering within the same pane
+      if (activePane === overPane) {
+        const list = current[activePane];
+        const activeIndex = list.findIndex((t) => t.id === activeId);
+        const overIndex = list.findIndex((t) => t.id === overId);
+
+        if (
+          activeIndex !== -1 &&
+          overIndex !== -1 &&
+          activeIndex !== overIndex
+        ) {
+          return {
+            ...current,
+            [activePane]: arrayMove(list, activeIndex, overIndex),
+          };
+        }
+        return prev;
+      }
+
+      // Case 2: Moving between panes (Backlog <-> Sprint)
+      const sourceList = current[activePane];
+      const targetList = current[overPane];
+
+      const taskIndex = sourceList.findIndex((t) => t.id === activeId);
+      if (taskIndex === -1) return prev;
+
+      const sourceTask = sourceList[taskIndex];
+      const movedTask: Task = {
+        ...sourceTask,
+        sprintId: overPane === "sprint" ? effectiveSprintId : null,
+        status:
+          overPane === "sprint"
+            ? sourceTask.status === "BACKLOG"
+              ? "TODO"
+              : sourceTask.status
+            : sourceTask.status === "TODO"
+              ? "BACKLOG"
+              : sourceTask.status,
+      };
+
+      const nextSource = sourceList.filter((t) => t.id !== activeId);
+      const nextTarget = [...targetList];
+
+      const overIndex = targetList.findIndex((t) => t.id === overId);
+      if (overIndex >= 0) {
+        nextTarget.splice(overIndex, 0, movedTask);
+      } else {
+        nextTarget.push(movedTask);
+      }
+
+      return {
+        ...current,
+        [activePane]: nextSource,
+        [overPane]: nextTarget,
+      };
+    });
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveTask(null);
+    setActiveTaskWidth(null);
 
-    if (!over) return;
-
-    const taskId = active.id as string;
-    const overTarget = over.id as string;
-
-    const task = allTasks.find((t) => t.id === taskId);
-    if (!task) return;
-
-    const isCurrentlyInSprint = task.sprintId === effectiveSprintId;
-
-    if (
-      overTarget === "sprint-droppable" &&
-      !isCurrentlyInSprint &&
-      effectiveSprintId
-    ) {
-      // Move to sprint
-      reorderTasks.mutate([
-        {
-          id: taskId,
-          position: sprintTasks.length,
-          sprintId: effectiveSprintId,
-        },
-      ]);
-    } else if (overTarget === "backlog-droppable" && isCurrentlyInSprint) {
-      // Move to backlog
-      reorderTasks.mutate([
-        {
-          id: taskId,
-          position: backlogTasks.length,
-          sprintId: null,
-        },
-      ]);
+    if (!over) {
+      setDragPanes(null);
+      return;
     }
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+    const current = dragPanes || derivedPanes;
+
+    let targetPane: "backlog" | "sprint" | undefined;
+    if (
+      overId === "sprint-droppable" ||
+      current.sprint.some((t) => t.id === overId || t.id === activeId)
+    ) {
+      targetPane = "sprint";
+    } else if (
+      overId === "backlog-droppable" ||
+      current.backlog.some((t) => t.id === overId || t.id === activeId)
+    ) {
+      targetPane = "backlog";
+    }
+
+    if (!targetPane) {
+      setDragPanes(null);
+      return;
+    }
+
+    const targetList = current[targetPane];
+    const targetSprintId = targetPane === "sprint" ? effectiveSprintId : null;
+
+    const itemsToUpdate = targetList.map((task, idx) => ({
+      id: task.id,
+      position: idx,
+      sprintId: targetSprintId,
+      status:
+        targetPane === "sprint"
+          ? task.status === "BACKLOG"
+            ? "TODO"
+            : task.status
+          : task.status === "TODO"
+            ? "BACKLOG"
+            : task.status,
+    }));
+
+    reorderTasks.mutate(itemsToUpdate, {
+      onSettled: () => setDragPanes(null),
+    });
   };
 
   const handleMoveToSprint = (taskId: string) => {
     if (!effectiveSprintId) return;
+    const task = allTasks.find((t) => t.id === taskId);
     reorderTasks.mutate([
       {
         id: taskId,
         position: sprintTasks.length,
         sprintId: effectiveSprintId,
+        status: task?.status === "BACKLOG" ? "TODO" : undefined,
       },
     ]);
   };
 
   const handleRemoveFromSprint = (taskId: string) => {
+    const task = allTasks.find((t) => t.id === taskId);
     reorderTasks.mutate([
       {
         id: taskId,
         position: backlogTasks.length,
         sprintId: null,
+        status: task?.status === "TODO" ? "BACKLOG" : undefined,
       },
     ]);
   };
@@ -421,17 +628,17 @@ export default function SprintsPage() {
                     Switch Sprint:
                   </span>
                   {sprintList.map((s) => (
-                    <button
+                    <Button
                       key={s.id}
+                      variant={
+                        s.id === effectiveSprintId ? "default" : "secondary"
+                      }
+                      size="sm"
                       onClick={() => setSelectedSprintId(s.id)}
-                      className={`shrink-0 rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
-                        s.id === effectiveSprintId
-                          ? "bg-primary text-primary-foreground shadow-xs"
-                          : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
-                      }`}
+                      className="h-7 shrink-0 px-2.5 text-xs font-medium"
                     >
                       {s.name} {s.status === "ACTIVE" ? "🟢" : ""}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}
@@ -458,15 +665,16 @@ export default function SprintsPage() {
         {/* Two-Pane Backlog & Sprint Board */}
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCorners}
+          collisionDetection={collisionDetectionStrategy}
           onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
           <div className="grid min-h-130 flex-1 grid-cols-1 gap-5 lg:grid-cols-2">
             {/* Left Pane: Backlog */}
-            <div
+            <DroppablePane
               id="backlog-droppable"
-              className="flex flex-col rounded-xl border border-border/70 bg-card/60 p-4 shadow-xs"
+              className="flex min-h-100 flex-col rounded-xl border border-border/70 bg-card/60 p-4 shadow-xs transition-colors"
             >
               <div className="mb-2 flex items-center justify-between border-b border-border/50 pb-3">
                 <div className="flex items-center gap-2">
@@ -487,7 +695,7 @@ export default function SprintsPage() {
                     {backlogPoints} pts
                   </span>
                   <TaskCreateModal
-                    projectId={selectedProjectId || "global"}
+                    projectId={effectiveProjectId}
                     defaultStatus="BACKLOG"
                   >
                     <Button
@@ -509,38 +717,47 @@ export default function SprintsPage() {
                   <Skeleton className="h-20 w-full rounded-lg" />
                 </div>
               ) : (
-                <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto pr-1">
-                  {backlogTasks.map((task) => (
-                    <div key={task.id} className="group relative">
-                      <KanbanCard
-                        task={task}
-                        onClick={(t) => setSelectedTaskForDetail(t)}
-                      />
-                      {effectiveSprintId && (
-                        <button
-                          onClick={() => handleMoveToSprint(task.id)}
-                          className="absolute top-2 right-2 z-10 hidden items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground shadow-md transition-all group-hover:flex hover:bg-primary/90"
-                          title="Move to Sprint"
-                        >
-                          Sprint <ArrowRight className="size-3" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                <SortableContext
+                  items={backlogTaskIds}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="flex min-h-62.5 flex-1 flex-col gap-2.5 overflow-y-auto pr-1">
+                    {backlogTasks.map((task) => (
+                      <div key={task.id} className="group relative">
+                        <KanbanCard
+                          task={task}
+                          onClick={(t) => setSelectedTaskForDetail(t)}
+                        />
+                        {effectiveSprintId && (
+                          <Button
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMoveToSprint(task.id);
+                            }}
+                            className="absolute top-2 right-2 z-10 hidden h-6 items-center gap-1 px-2 text-[11px] font-medium shadow-md group-hover:flex"
+                            title="Move to Sprint"
+                          >
+                            Sprint <ArrowRight className="size-3" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
 
-                  {backlogTasks.length === 0 && (
-                    <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-border/80 p-8 text-center text-xs text-muted-foreground/60 select-none">
-                      <span>Backlog is empty</span>
-                    </div>
-                  )}
-                </div>
+                    {backlogTasks.length === 0 && (
+                      <div className="flex min-h-35 flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-border/80 p-8 text-center text-xs text-muted-foreground/60 select-none">
+                        <span>Backlog is empty</span>
+                      </div>
+                    )}
+                  </div>
+                </SortableContext>
               )}
-            </div>
+            </DroppablePane>
 
             {/* Right Pane: Selected Sprint Tasks */}
-            <div
+            <DroppablePane
               id="sprint-droppable"
-              className="flex flex-col rounded-xl border border-border/70 bg-card/60 p-4 shadow-xs"
+              className="flex min-h-100 flex-col rounded-xl border border-border/70 bg-card/60 p-4 shadow-xs transition-colors"
             >
               <div className="mb-2 flex items-center justify-between border-b border-border/50 pb-3">
                 <div className="flex items-center gap-2">
@@ -560,9 +777,10 @@ export default function SprintsPage() {
                   <span className="text-xs font-medium text-muted-foreground">
                     {sprintTotalPoints} pts
                   </span>
-                  {selectedSprintId && (
+                  {effectiveSprintId && (
                     <TaskCreateModal
-                      projectId={selectedProjectId || "global"}
+                      projectId={effectiveProjectId}
+                      defaultSprintId={effectiveSprintId}
                       defaultStatus="TODO"
                     >
                       <Button
@@ -585,37 +803,63 @@ export default function SprintsPage() {
                   <Skeleton className="h-20 w-full rounded-lg" />
                 </div>
               ) : (
-                <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto pr-1">
-                  {sprintTasks.map((task) => (
-                    <div key={task.id} className="group relative">
-                      <KanbanCard
-                        task={task}
-                        onClick={(t) => setSelectedTaskForDetail(t)}
-                      />
-                      <button
-                        onClick={() => handleRemoveFromSprint(task.id)}
-                        className="absolute top-2 right-2 z-10 hidden items-center gap-1 rounded-md bg-destructive/90 px-2.5 py-1 text-[11px] font-medium text-destructive-foreground shadow-md transition-all group-hover:flex hover:bg-destructive"
-                        title="Return to Backlog"
-                      >
-                        <ArrowLeft className="size-3" /> Backlog
-                      </button>
-                    </div>
-                  ))}
+                <SortableContext
+                  items={sprintTaskIds}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="flex min-h-62.5 flex-1 flex-col gap-2.5 overflow-y-auto pr-1">
+                    {sprintTasks.map((task) => (
+                      <div key={task.id} className="group relative">
+                        <KanbanCard
+                          task={task}
+                          onClick={(t) => setSelectedTaskForDetail(t)}
+                        />
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveFromSprint(task.id);
+                          }}
+                          className="absolute top-2 right-2 z-10 hidden h-6 items-center gap-1 px-2 text-[11px] font-medium shadow-md group-hover:flex"
+                          title="Return to Backlog"
+                        >
+                          <ArrowLeft className="size-3" /> Backlog
+                        </Button>
+                      </div>
+                    ))}
 
-                  {sprintTasks.length === 0 && (
-                    <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-border/80 p-8 text-center text-xs text-muted-foreground/60 select-none">
-                      <span>
-                        Drag tasks from Backlog or click &quot;Sprint
-                        &rarr;&quot; to plan
-                      </span>
-                    </div>
-                  )}
-                </div>
+                    {sprintTasks.length === 0 && (
+                      <div className="flex min-h-35 flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-border/80 p-8 text-center text-xs text-muted-foreground/60 select-none">
+                        <span>
+                          Drag tasks from Backlog or click &quot;Sprint
+                          &rarr;&quot; to plan
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </SortableContext>
               )}
-            </div>
+            </DroppablePane>
           </div>
-          <DragOverlay>
-            {activeTask ? <KanbanCardOverlay task={activeTask} /> : null}
+          <DragOverlay
+            dropAnimation={{
+              duration: 150,
+              easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
+            }}
+          >
+            {activeTask ? (
+              <div
+                style={
+                  activeTaskWidth
+                    ? { width: `${activeTaskWidth}px` }
+                    : undefined
+                }
+                className="rotate-1 opacity-95 shadow-2xl"
+              >
+                <KanbanCardOverlay task={activeTask} />
+              </div>
+            ) : null}
           </DragOverlay>
         </DndContext>
 

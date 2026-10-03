@@ -173,6 +173,14 @@ export class TasksService {
           sprint: {
             select: { id: true, name: true },
           },
+          parentTask: {
+            select: {
+              id: true,
+              taskNumber: true,
+              title: true,
+              status: true,
+            },
+          },
         },
         orderBy: { [sortBy]: sortOrder },
         skip: (page - 1) * limit,
@@ -226,6 +234,48 @@ export class TasksService {
         },
         sprint: {
           select: { id: true, name: true },
+        },
+        parentTask: {
+          select: {
+            id: true,
+            taskNumber: true,
+            title: true,
+            status: true,
+            project: {
+              select: { id: true, key: true, name: true },
+            },
+          },
+        },
+        subTasks: {
+          where: { deletedAt: null },
+          orderBy: { createdAt: 'asc' },
+          include: {
+            assignee: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+        comments: {
+          orderBy: { createdAt: 'asc' },
+          include: {
+            author: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+        attachments: {
+          orderBy: { uploadedAt: 'desc' },
         },
       },
     });
@@ -376,11 +426,13 @@ export class TasksService {
       });
     }
 
-    if (
+    const isNewAssignment = Boolean(
       dto.assigneeId &&
       dto.assigneeId !== previous.assigneeId &&
-      dto.assigneeId !== userId
-    ) {
+      dto.assigneeId !== userId,
+    );
+
+    if (isNewAssignment && dto.assigneeId) {
       void this.notificationsService.create({
         userId: dto.assigneeId,
         type: NotificationType.TASK_ASSIGNED,
@@ -388,6 +440,48 @@ export class TasksService {
         message: `You were assigned to "${updated.title}" (${updated.project.key}-${updated.taskNumber})`,
         data: { taskId: updated.id, projectId: updated.projectId },
       });
+    }
+
+    // Trigger TASK_UPDATED notification for task stakeholders
+    if (Object.keys(diff).length > 0) {
+      const recipients = new Set<string>();
+
+      // Notify assignee only if they did not perform the action and not a new assignment
+      if (
+        updated.assigneeId &&
+        updated.assigneeId !== userId &&
+        !isNewAssignment
+      ) {
+        recipients.add(updated.assigneeId);
+      }
+
+      // Notify reporter only if they did not perform the action
+      if (
+        updated.reporterId &&
+        updated.reporterId !== userId &&
+        updated.reporterId !== updated.assigneeId
+      ) {
+        recipients.add(updated.reporterId);
+      }
+
+      if (recipients.size > 0) {
+        let updateMessage = `"${updated.title}" (${updated.project.key}-${updated.taskNumber}) was updated`;
+        if (diff.status) {
+          updateMessage = `Status changed to ${updated.status} on "${updated.title}" (${updated.project.key}-${updated.taskNumber})`;
+        } else if (diff.priority) {
+          updateMessage = `Priority changed to ${updated.priority} on "${updated.title}" (${updated.project.key}-${updated.taskNumber})`;
+        }
+
+        for (const recipientId of recipients) {
+          void this.notificationsService.create({
+            userId: recipientId,
+            type: NotificationType.TASK_UPDATED,
+            title: 'Task Updated',
+            message: updateMessage,
+            data: { taskId: updated.id, projectId: updated.projectId },
+          });
+        }
+      }
     }
 
     this.notificationsGateway.broadcastTaskUpdate(updated.projectId, {
@@ -426,7 +520,44 @@ export class TasksService {
     return { message: `Task "${id}" deleted` };
   }
 
-  async reorder(dto: ReorderTasksDto) {
+  async reorder(dto: ReorderTasksDto, userId?: string) {
+    if (!dto.items.length) return [];
+
+    const existingTasks = await this.prisma.task.findMany({
+      where: { id: { in: dto.items.map((i) => i.id) } },
+      select: {
+        id: true,
+        status: true,
+        title: true,
+        taskNumber: true,
+        projectId: true,
+        assigneeId: true,
+        reporterId: true,
+        project: { select: { key: true, name: true } },
+      },
+    });
+
+    const existingMap = new Map(existingTasks.map((t) => [t.id, t]));
+
+    const changedStatusTasks: {
+      task: (typeof existingTasks)[0];
+      oldStatus: TaskStatus;
+      newStatus: TaskStatus;
+    }[] = [];
+
+    for (const item of dto.items) {
+      if (item.status) {
+        const prev = existingMap.get(item.id);
+        if (prev && prev.status !== item.status) {
+          changedStatusTasks.push({
+            task: prev,
+            oldStatus: prev.status,
+            newStatus: item.status,
+          });
+        }
+      }
+    }
+
     const results = await this.prisma.$transaction(
       dto.items.map((item) => {
         const data: Prisma.TaskUpdateInput = {
@@ -455,17 +586,59 @@ export class TasksService {
       }),
     );
 
-    if (dto.items.length > 0) {
-      const sample = await this.prisma.task.findUnique({
-        where: { id: dto.items[0].id },
-        select: { projectId: true },
-      });
-      if (sample) {
-        this.notificationsGateway.broadcastTaskUpdate(sample.projectId, {
-          action: 'reordered',
-          items: dto.items,
+    // Send notifications and audit logs for tasks that changed status
+    for (const { task, oldStatus, newStatus } of changedStatusTasks) {
+      const recipients = new Set<string>();
+
+      // Notify assignee only if they did not perform the drag-drop action
+      if (task.assigneeId && task.assigneeId !== userId) {
+        recipients.add(task.assigneeId);
+      }
+
+      // Notify reporter only if they did not perform the drag-drop action
+      if (
+        task.reporterId &&
+        task.reporterId !== userId &&
+        task.reporterId !== task.assigneeId
+      ) {
+        recipients.add(task.reporterId);
+      }
+
+      const taskKey = `${task.project?.key || 'TASK'}-${task.taskNumber}`;
+      const message = `Status changed to ${newStatus} on "${task.title}" (${taskKey})`;
+
+      for (const recipientId of recipients) {
+        void this.notificationsService.create({
+          userId: recipientId,
+          type: NotificationType.TASK_UPDATED,
+          title: 'Task Updated',
+          message,
+          data: { taskId: task.id, projectId: task.projectId },
         });
       }
+
+      void this.auditLogsService.create({
+        action: AuditAction.STATUS_CHANGE,
+        entityType: 'Task',
+        entityId: task.id,
+        actorId: userId,
+        diff: { status: { from: oldStatus, to: newStatus } },
+        metadata: {
+          taskKey,
+          taskTitle: task.title,
+          projectName: task.project?.name,
+        },
+      });
+    }
+
+    if (existingTasks.length > 0) {
+      this.notificationsGateway.broadcastTaskUpdate(
+        existingTasks[0].projectId,
+        {
+          action: 'reordered',
+          items: dto.items,
+        },
+      );
     }
 
     return results;

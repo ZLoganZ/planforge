@@ -134,6 +134,13 @@ export const usersApi = {
 
   getById: (id: string) => api.get(`/users/${id}`),
 
+  invite: (data: {
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    role?: string;
+  }) => api.post("/users/invite", data),
+
   update: (id: string, data: Record<string, unknown>) =>
     api.patch(`/users/${id}`, data),
 
@@ -232,4 +239,27 @@ export const tasksApi = {
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
   },
+};
+
+// Invitations
+export const invitationsApi = {
+  create: (data: { email: string; role?: string; workspaceId?: string }) =>
+    api.post("/invitations", data),
+
+  getAll: (workspaceId?: string) =>
+    api.get("/invitations", { params: { workspaceId } }),
+
+  validate: (token: string) =>
+    api.get("/invitations/validate", { params: { token } }),
+
+  accept: (data: {
+    token: string;
+    firstName: string;
+    lastName?: string;
+    password: string;
+  }) => api.post("/invitations/accept", data),
+
+  resend: (id: string) => api.post(`/invitations/${id}/resend`),
+
+  revoke: (id: string) => api.delete(`/invitations/${id}`),
 };

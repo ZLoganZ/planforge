@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
+import { hash } from 'bcryptjs';
 
 import type { PaginatedResult } from '../../common/dto/pagination-query.dto.js';
 import { PrismaService } from '../../database/prisma.service.js';
-import { QueryUsersDto, UpdateUserDto } from './dto/users.dto.js';
+import { InviteUserDto, QueryUsersDto, UpdateUserDto } from './dto/users.dto.js';
 
 @Injectable()
 export class UsersService {
@@ -182,5 +183,104 @@ export class UsersService {
     });
 
     return { message: `User "${id}" deleted` };
+  }
+
+  async invite(dto: InviteUserDto, currentUserId?: string) {
+    const email = dto.email.trim().toLowerCase();
+    const role = dto.role ?? Role.MEMBER;
+
+    // Find active workspace for the inviting user or default workspace
+    let workspaceId: string | undefined;
+    if (currentUserId) {
+      const member = await this.prisma.workspaceMember.findFirst({
+        where: { userId: currentUserId },
+        select: { workspaceId: true },
+      });
+      workspaceId = member?.workspaceId;
+    }
+
+    if (!workspaceId) {
+      const defaultWs = await this.prisma.workspace.findFirst({
+        select: { id: true },
+      });
+      workspaceId = defaultWs?.id;
+    }
+
+    let user = await this.prisma.user.findUnique({
+      where: { email },
+      include: { workspaceMembers: true },
+    });
+
+    if (user) {
+      // Reactivate user if deactivated or deleted
+      if (!user.isActive || user.deletedAt) {
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { isActive: true, deletedAt: null },
+        });
+      }
+
+      // Update name if provided
+      if (dto.firstName || dto.lastName) {
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            ...(dto.firstName && { firstName: dto.firstName.trim() }),
+            ...(dto.lastName && { lastName: dto.lastName.trim() }),
+          },
+        });
+      }
+
+      // Link to workspace if workspace exists
+      if (workspaceId) {
+        const existingMembership = await this.prisma.workspaceMember.findUnique({
+          where: {
+            workspaceId_userId: {
+              workspaceId,
+              userId: user.id,
+            },
+          },
+        });
+
+        if (existingMembership) {
+          await this.prisma.workspaceMember.update({
+            where: { id: existingMembership.id },
+            data: { role },
+          });
+        } else {
+          await this.prisma.workspaceMember.create({
+            data: {
+              workspaceId,
+              userId: user.id,
+              role,
+            },
+          });
+        }
+      }
+    } else {
+      const defaultPassword = 'Password123!';
+      const passwordHash = await hash(defaultPassword, 10);
+
+      user = await this.prisma.user.create({
+        data: {
+          email,
+          firstName: dto.firstName?.trim() || email.split('@')[0],
+          lastName: dto.lastName?.trim() || '',
+          passwordHash,
+          isActive: true,
+          ...(workspaceId && {
+            workspaceMembers: {
+              create: {
+                workspaceId,
+                role,
+              },
+            },
+          }),
+        },
+        include: { workspaceMembers: true },
+      });
+    }
+
+    return this.findOne(user.id);
   }
 }

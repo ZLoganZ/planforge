@@ -30,6 +30,27 @@ export interface Task {
   } | null;
   taskLabels: { label: { id: string; name: string; color: string } }[];
   sprint: { id: string; name: string; status?: string } | null;
+  parentTaskId?: string | null;
+  parentTask?: {
+    id: string;
+    taskNumber: number;
+    title: string;
+    status: string;
+    project?: { id: string; key: string; name: string };
+  } | null;
+  subTasks?: {
+    id: string;
+    taskNumber: number;
+    title: string;
+    status: string;
+    priority: string;
+    assignee: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      avatarUrl: string;
+    } | null;
+  }[];
 }
 
 export interface TasksResponse {
@@ -125,8 +146,10 @@ export function useUpdateTask() {
       const { data } = await api.patch<Task>(`/tasks/${id}`, taskData);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["task"] });
+      queryClient.invalidateQueries({ queryKey: ["task", variables.id] });
       queryClient.invalidateQueries({ queryKey: ["sprints"] });
     },
   });
@@ -141,6 +164,7 @@ export function useDeleteTask() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["task"] });
       queryClient.invalidateQueries({ queryKey: ["sprints"] });
     },
   });
@@ -200,6 +224,101 @@ export function useBulkDeleteTasks() {
       return data;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["sprints"] });
+    },
+  });
+}
+
+export function useCreateSubtask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      parentTaskId,
+      projectId,
+      title,
+    }: {
+      parentTaskId: string;
+      projectId: string;
+      title: string;
+    }) => {
+      const { data } = await api.post("/tasks", {
+        title,
+        projectId,
+        parentTaskId,
+        status: "TODO",
+        priority: "MEDIUM",
+      });
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["task", variables.parentTaskId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+}
+
+export function useTask(id?: string) {
+  return useQuery({
+    queryKey: ["task", id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data } = await api.get<Task>(`/tasks/${id}`);
+      return data;
+    },
+    enabled: Boolean(id),
+  });
+}
+
+export function useToggleSubtask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      subtaskId,
+      parentTaskId: _parentTaskId,
+      status,
+    }: {
+      subtaskId: string;
+      parentTaskId: string;
+      status: string;
+    }) => {
+      void _parentTaskId;
+      const { data } = await api.patch<Task>(`/tasks/${subtaskId}`, { status });
+      return data;
+    },
+    onMutate: async ({ subtaskId, parentTaskId, status }) => {
+      await queryClient.cancelQueries({ queryKey: ["task", parentTaskId] });
+      const previousTask = queryClient.getQueryData<Task>([
+        "task",
+        parentTaskId,
+      ]);
+
+      if (previousTask) {
+        queryClient.setQueryData<Task>(["task", parentTaskId], {
+          ...previousTask,
+          subTasks: (previousTask.subTasks || []).map((st) =>
+            st.id === subtaskId ? { ...st, status } : st
+          ),
+        });
+      }
+
+      return { previousTask, parentTaskId };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previousTask) {
+        queryClient.setQueryData(
+          ["task", context.parentTaskId],
+          context.previousTask
+        );
+      }
+    },
+    onSettled: (_data, _err, { parentTaskId }) => {
+      queryClient.invalidateQueries({ queryKey: ["task", parentTaskId] });
+      queryClient.invalidateQueries({ queryKey: ["task"] });
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["sprints"] });
     },

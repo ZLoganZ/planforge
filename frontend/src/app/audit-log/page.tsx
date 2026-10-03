@@ -23,6 +23,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   AuditLogItem,
   useAuditLogs,
   useAuditLogStats,
@@ -208,37 +215,69 @@ export default function AuditLogPage() {
 
           <div className="flex items-center gap-2">
             <Filter className="hidden size-4 shrink-0 text-muted-foreground sm:block" />
-            <select
-              value={action}
-              onChange={(e) => {
-                setAction(e.target.value);
+            <Select
+              value={action || "ALL"}
+              onValueChange={(val) => {
+                setAction(val === "ALL" ? "" : val);
                 setPage(1);
               }}
-              className="h-9 rounded-lg border border-input bg-background/50 px-3 text-xs text-foreground focus:ring-1 focus:ring-ring focus:outline-hidden"
             >
-              <option value="">All Actions</option>
-              <option value="CREATE">CREATE</option>
-              <option value="UPDATE">UPDATE</option>
-              <option value="STATUS_CHANGE">STATUS_CHANGE</option>
-              <option value="DELETE">DELETE</option>
-              <option value="ASSIGN">ASSIGN</option>
-              <option value="COMMENT">COMMENT</option>
-            </select>
+              <SelectTrigger className="h-9 w-[130px] bg-background/50 text-xs">
+                <SelectValue placeholder="All Actions" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL" className="text-xs">
+                  All Actions
+                </SelectItem>
+                <SelectItem value="CREATE" className="text-xs">
+                  CREATE
+                </SelectItem>
+                <SelectItem value="UPDATE" className="text-xs">
+                  UPDATE
+                </SelectItem>
+                <SelectItem value="STATUS_CHANGE" className="text-xs">
+                  STATUS_CHANGE
+                </SelectItem>
+                <SelectItem value="DELETE" className="text-xs">
+                  DELETE
+                </SelectItem>
+                <SelectItem value="ASSIGN" className="text-xs">
+                  ASSIGN
+                </SelectItem>
+                <SelectItem value="COMMENT" className="text-xs">
+                  COMMENT
+                </SelectItem>
+              </SelectContent>
+            </Select>
 
-            <select
-              value={entityType}
-              onChange={(e) => {
-                setEntityType(e.target.value);
+            <Select
+              value={entityType || "ALL"}
+              onValueChange={(val) => {
+                setEntityType(val === "ALL" ? "" : val);
                 setPage(1);
               }}
-              className="h-9 rounded-lg border border-input bg-background/50 px-3 text-xs text-foreground focus:ring-1 focus:ring-ring focus:outline-hidden"
             >
-              <option value="">All Entities</option>
-              <option value="Task">Task</option>
-              <option value="Project">Project</option>
-              <option value="Sprint">Sprint</option>
-              <option value="User">User</option>
-            </select>
+              <SelectTrigger className="h-9 w-[130px] bg-background/50 text-xs">
+                <SelectValue placeholder="All Entities" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL" className="text-xs">
+                  All Entities
+                </SelectItem>
+                <SelectItem value="Task" className="text-xs">
+                  Task
+                </SelectItem>
+                <SelectItem value="Project" className="text-xs">
+                  Project
+                </SelectItem>
+                <SelectItem value="Sprint" className="text-xs">
+                  Sprint
+                </SelectItem>
+                <SelectItem value="User" className="text-xs">
+                  User
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   closestCorners,
   CollisionDetection,
@@ -32,7 +33,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProjects } from "@/hooks/use-projects";
 import { useSprints } from "@/hooks/use-sprints";
-import { Task, useReorderTasks, useTasks } from "@/hooks/use-tasks";
+import { Task, useReorderTasks, useTask, useTasks } from "@/hooks/use-tasks";
 import { cn } from "@/lib/utils";
 
 import { KanbanCardOverlay } from "./kanban-card";
@@ -62,9 +63,14 @@ interface KanbanBoardProps {
 }
 
 export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
-  const [selectedProjectId, setSelectedProjectId] = useState<string>(
-    initialProjectId || "all"
-  );
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const projectIdParam = searchParams.get("projectId");
+  const taskIdParam = searchParams.get("taskId");
+  const { data: paramTask } = useTask(taskIdParam || "");
+
+  const currentProjectId = projectIdParam || initialProjectId || "all";
   const [selectedSprintId, setSelectedSprintId] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPriority, setSelectedPriority] = useState<string>("all");
@@ -74,11 +80,25 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
     useState<Task | null>(null);
   const [quickAddStatus, setQuickAddStatus] = useState<string | null>(null);
 
+  const handleProjectChange = (newProjectId: string) => {
+    setSelectedSprintId("all");
+    const params = new URLSearchParams(searchParams.toString());
+    if (newProjectId === "all") {
+      params.delete("projectId");
+    } else {
+      params.set("projectId", newProjectId);
+    }
+    const newUrl = params.toString()
+      ? `${pathname}?${params.toString()}`
+      : pathname;
+    router.replace(newUrl);
+  };
+
   const { data: projectsData } = useProjects();
   const projects = Array.isArray(projectsData?.items) ? projectsData.items : [];
 
   const effectiveProjectId =
-    selectedProjectId !== "all" ? selectedProjectId : undefined;
+    currentProjectId !== "all" ? currentProjectId : undefined;
 
   const { data: sprints } = useSprints({
     projectId: effectiveProjectId,
@@ -97,6 +117,17 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
   });
 
   const reorderTasks = useReorderTasks();
+
+  const activeDetailTask = useMemo(() => {
+    if (selectedTaskForDetail) return selectedTaskForDetail;
+    if (paramTask) return paramTask;
+    if (taskIdParam && tasksData?.items) {
+      return (
+        (tasksData.items as Task[]).find((t) => t.id === taskIdParam) || null
+      );
+    }
+    return null;
+  }, [selectedTaskForDetail, paramTask, taskIdParam, tasksData]);
 
   // Local drag state for optimistic column reordering during DnD
   const [dragColumns, setDragColumns] = useState<Record<string, Task[]> | null>(
@@ -344,7 +375,7 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
   );
 
   const currentProjectIdForCreation =
-    effectiveProjectId || (projects.length > 0 ? projects[0].id : "global");
+    effectiveProjectId || (projects.length > 0 ? projects[0].id : undefined);
 
   return (
     <div className="flex h-full flex-col space-y-4">
@@ -363,10 +394,7 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
           </div>
 
           {/* Project Filter */}
-          <Select
-            value={selectedProjectId}
-            onValueChange={setSelectedProjectId}
-          >
+          <Select value={currentProjectId} onValueChange={handleProjectChange}>
             <SelectTrigger className="h-9 w-44 text-xs">
               <SelectValue placeholder="All Projects" />
             </SelectTrigger>
@@ -478,10 +506,20 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
 
       {/* Task Detail Dialog */}
       <TaskDetailDialog
-        task={selectedTaskForDetail}
-        open={Boolean(selectedTaskForDetail)}
+        task={activeDetailTask}
+        open={Boolean(activeDetailTask)}
         onOpenChange={(open) => {
-          if (!open) setSelectedTaskForDetail(null);
+          if (!open) {
+            setSelectedTaskForDetail(null);
+            if (taskIdParam) {
+              const params = new URLSearchParams(searchParams.toString());
+              params.delete("taskId");
+              const newUrl = params.toString()
+                ? `${pathname}?${params.toString()}`
+                : pathname;
+              router.replace(newUrl);
+            }
+          }
         }}
       />
 

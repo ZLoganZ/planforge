@@ -8,6 +8,7 @@ import {
   Calendar,
   Check,
   Copy,
+  CornerDownRight,
   Eye,
   FolderKanban,
   Layers,
@@ -53,13 +54,23 @@ function TaskTitleCell({ task }: { task: Task }) {
   return (
     <>
       <div className="flex items-center space-x-2">
-        <button
+        {task.parentTask && (
+          <span
+            className="inline-flex shrink-0 items-center gap-0.5 rounded bg-primary/10 px-1 py-0.5 font-sans text-[10px] font-medium text-primary"
+            title={`Subtask of ${task.parentTask.title}`}
+          >
+            <CornerDownRight className="size-3" />
+            <span>Subtask</span>
+          </span>
+        )}
+        <Button
           type="button"
+          variant="link"
           onClick={() => setDetailOpen(true)}
-          className="max-w-125 truncate text-left font-medium transition-colors hover:text-primary hover:underline focus:outline-hidden"
+          className="h-auto max-w-125 p-0 text-left font-medium text-foreground hover:text-primary hover:no-underline focus-visible:ring-0"
         >
-          {task.title}
-        </button>
+          <span className="truncate">{task.title}</span>
+        </Button>
         {labels.length > 0 && (
           <div className="flex space-x-1">
             {labels.slice(0, 2).map((l) => (

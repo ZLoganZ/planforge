@@ -82,8 +82,8 @@ export class TasksController {
 
   @Post('reorder')
   @ApiOperation({ summary: 'Reorder tasks position / status' })
-  reorder(@Body() dto: ReorderTasksDto) {
-    return this.tasksService.reorder(dto);
+  reorder(@Body() dto: ReorderTasksDto, @CurrentUser('id') userId?: string) {
+    return this.tasksService.reorder(dto, userId);
   }
 
   @Patch('bulk')
