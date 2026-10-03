@@ -16,7 +16,7 @@ import { useSprints } from "@/hooks/use-sprints";
 import { Task, useReorderTasks, useTasks } from "@/hooks/use-tasks";
 import { cn } from "@/lib/utils";
 import {
-  closestCorners,
+  CollisionDetection,
   DndContext,
   DragEndEvent,
   DragOverEvent,
@@ -24,13 +24,16 @@ import {
   DragStartEvent,
   KeyboardSensor,
   PointerSensor,
+  closestCorners,
+  pointerWithin,
+  rectIntersection,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { Filter, Plus, RefreshCw, Search } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
-import { KanbanCard } from "./kanban-card";
+import { KanbanCardOverlay } from "./kanban-card";
 import { ColumnDefinition, KanbanColumn } from "./kanban-column";
 import { TaskDetailDialog } from "./task-detail-dialog";
 
@@ -150,143 +153,196 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
     }),
   );
 
-  const findColumnOfTask = useCallback(
-    (taskId: string): string | undefined => {
-      return Object.keys(boardColumns).find((colId) =>
-        boardColumns[colId].some((t) => t.id === taskId),
-      );
-    },
-    [boardColumns],
-  );
-
-  const handleDragStart = (event: DragStartEvent) => {
-    const { active } = event;
-    const colId = findColumnOfTask(active.id as string);
-    setDragStartColumn(colId || null);
-    setDragColumns(derivedColumns);
-    if (colId) {
-      const task = boardColumns[colId]?.find((t) => t.id === active.id);
-      if (task) setActiveTask(task);
+  const collisionDetectionStrategy: CollisionDetection = useCallback((args) => {
+    // 1. Point-in-rect check: fast and prevents cross-column jumping
+    const pointerCollisions = pointerWithin(args);
+    if (pointerCollisions.length > 0) {
+      return pointerCollisions;
     }
-  };
+    // 2. Intersection fallback
+    const intersections = rectIntersection(args);
+    if (intersections.length > 0) {
+      return intersections;
+    }
+    return closestCorners(args);
+  }, []);
 
-  const handleDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-    if (!over) return;
+  const handleTaskClick = useCallback((task: Task) => {
+    setSelectedTaskForDetail(task);
+  }, []);
 
-    const activeId = active.id as string;
-    const overId = over.id as string;
+  const handleQuickAdd = useCallback((status: string) => {
+    setQuickAddStatus(status);
+  }, []);
 
-    const activeColumn = findColumnOfTask(activeId);
-    // Over could be a column or a task
-    const overColumn =
-      overId in boardColumns ? overId : findColumnOfTask(overId);
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      const { active } = event;
+      const activeId = active.id as string;
+      const current = dragColumns || derivedColumns;
 
-    if (!activeColumn || !overColumn || activeColumn === overColumn) return;
+      let foundTask: Task | undefined;
+      let foundCol: string | null = null;
 
-    setDragColumns((prev) => {
-      const current = prev || derivedColumns;
-      const sourceList = [...current[activeColumn]];
-      const targetList = [...current[overColumn]];
-
-      const taskIndex = sourceList.findIndex((t) => t.id === activeId);
-      if (taskIndex === -1) return prev;
-
-      const [movedTask] = sourceList.splice(taskIndex, 1);
-      const updatedMovedTask = { ...movedTask, status: overColumn };
-
-      const overIndex = targetList.findIndex((t) => t.id === overId);
-      if (overIndex >= 0) {
-        targetList.splice(overIndex, 0, updatedMovedTask);
-      } else {
-        targetList.push(updatedMovedTask);
+      for (const [colId, list] of Object.entries(current)) {
+        const match = list.find((t) => t.id === activeId);
+        if (match) {
+          foundTask = match;
+          foundCol = colId;
+          break;
+        }
       }
 
-      return {
-        ...current,
-        [activeColumn]: sourceList,
-        [overColumn]: targetList,
-      };
-    });
-  };
+      setDragStartColumn(foundCol);
+      setDragColumns(current);
+      if (foundTask) {
+        setActiveTask(foundTask);
+      }
+    },
+    [dragColumns, derivedColumns],
+  );
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    const sourceCol = dragStartColumn;
-    setActiveTask(null);
-    setDragStartColumn(null);
+  const handleDragOver = useCallback(
+    (event: DragOverEvent) => {
+      const { active, over } = event;
+      if (!over) return;
 
-    if (!over) {
-      setDragColumns(null);
-      return;
-    }
+      const activeId = active.id as string;
+      const overId = over.id as string;
 
-    const activeId = active.id as string;
-    const overId = over.id as string;
+      setDragColumns((prev) => {
+        const current = prev || derivedColumns;
 
-    // Target column can be the column ID itself (e.g. 'IN_REVIEW') or the column containing the hovered task
-    const targetCol =
-      overId in boardColumns
-        ? overId
-        : findColumnOfTask(overId) || findColumnOfTask(activeId);
+        let activeColumn: string | undefined;
+        let overColumn: string | undefined;
 
-    if (!targetCol) {
-      setDragColumns(null);
-      return;
-    }
+        for (const [colId, list] of Object.entries(current)) {
+          if (!activeColumn && list.some((t) => t.id === activeId)) {
+            activeColumn = colId;
+          }
+          if (!overColumn) {
+            if (colId === overId) {
+              overColumn = colId;
+            } else if (list.some((t) => t.id === overId)) {
+              overColumn = colId;
+            }
+          }
+          if (activeColumn && overColumn) break;
+        }
 
-    const targetList = [...(boardColumns[targetCol] || [])];
+        if (!activeColumn || !overColumn || activeColumn === overColumn) {
+          return prev;
+        }
 
-    if (sourceCol === targetCol) {
-      // Reordering within the same column
-      const oldIndex = targetList.findIndex((t) => t.id === activeId);
-      const newIndex = targetList.findIndex((t) => t.id === overId);
+        const sourceList = current[activeColumn];
+        const targetList = current[overColumn];
 
-      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-        const reordered = arrayMove(targetList, oldIndex, newIndex);
-        const itemsToUpdate = reordered.map((task, idx) => ({
-          id: task.id,
-          position: idx,
-          status: targetCol,
-        }));
-        // Keep dragColumns alive until the server confirms, then clear.
+        const taskIndex = sourceList.findIndex((t) => t.id === activeId);
+        if (taskIndex === -1) return prev;
+
+        const movedTask = { ...sourceList[taskIndex], status: overColumn };
+        const nextSource = sourceList.filter((t) => t.id !== activeId);
+
+        const overIndex = targetList.findIndex((t) => t.id === overId);
+        const nextTarget = [...targetList];
+        if (overIndex >= 0) {
+          nextTarget.splice(overIndex, 0, movedTask);
+        } else {
+          nextTarget.push(movedTask);
+        }
+
+        return {
+          ...current,
+          [activeColumn]: nextSource,
+          [overColumn]: nextTarget,
+        };
+      });
+    },
+    [derivedColumns],
+  );
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      const sourceCol = dragStartColumn;
+      setActiveTask(null);
+      setDragStartColumn(null);
+
+      if (!over) {
+        setDragColumns(null);
+        return;
+      }
+
+      const activeId = active.id as string;
+      const overId = over.id as string;
+      const current = dragColumns || derivedColumns;
+
+      let targetCol: string | undefined;
+      for (const [colId, list] of Object.entries(current)) {
+        if (colId === overId || list.some((t) => t.id === overId)) {
+          targetCol = colId;
+          break;
+        }
+      }
+
+      if (!targetCol) {
+        setDragColumns(null);
+        return;
+      }
+
+      const targetList = [...(current[targetCol] || [])];
+
+      if (sourceCol === targetCol) {
+        // Reordering within the same column
+        const oldIndex = targetList.findIndex((t) => t.id === activeId);
+        const newIndex = targetList.findIndex((t) => t.id === overId);
+
+        if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+          const reordered = arrayMove(targetList, oldIndex, newIndex);
+          const itemsToUpdate = reordered.map((task, idx) => ({
+            id: task.id,
+            position: idx,
+            status: targetCol,
+          }));
+          reorderTasks.mutate(itemsToUpdate, {
+            onSettled: () => setDragColumns(null),
+          });
+        } else {
+          setDragColumns(null);
+        }
+      } else {
+        // Moving to a different column
+        const itemsToUpdate: {
+          id: string;
+          position: number;
+          status: string;
+        }[] = [];
+        let foundActive = false;
+
+        targetList.forEach((task, idx) => {
+          if (task.id === activeId) foundActive = true;
+          itemsToUpdate.push({
+            id: task.id,
+            position: idx,
+            status: targetCol,
+          });
+        });
+
+        if (!foundActive) {
+          itemsToUpdate.push({
+            id: activeId,
+            position: targetList.length,
+            status: targetCol,
+          });
+        }
+
         reorderTasks.mutate(itemsToUpdate, {
           onSettled: () => setDragColumns(null),
         });
-      } else {
-        setDragColumns(null);
       }
-    } else {
-      // Moving to a different column (e.g. to IN_REVIEW)
-      const itemsToUpdate: { id: string; position: number; status: string }[] =
-        [];
-      let foundActive = false;
-
-      targetList.forEach((task, idx) => {
-        if (task.id === activeId) foundActive = true;
-        itemsToUpdate.push({
-          id: task.id,
-          position: idx,
-          status: targetCol,
-        });
-      });
-
-      // If activeId wasn't in targetList yet (e.g. instantaneous drop)
-      if (!foundActive) {
-        itemsToUpdate.push({
-          id: activeId,
-          position: targetList.length,
-          status: targetCol,
-        });
-      }
-
-      // Keep dragColumns alive so the UI holds the new position while the
-      // API request is in-flight. Clear only after invalidation completes.
-      reorderTasks.mutate(itemsToUpdate, {
-        onSettled: () => setDragColumns(null),
-      });
-    }
-  };
+    },
+    [dragStartColumn, dragColumns, derivedColumns, reorderTasks],
+  );
 
   const currentProjectIdForCreation =
     effectiveProjectId || (projects.length > 0 ? projects[0].id : "global");
@@ -393,7 +449,7 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
       ) : (
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCorners}
+          collisionDetection={collisionDetectionStrategy}
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
@@ -404,14 +460,19 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
                 key={col.id}
                 column={col}
                 tasks={boardColumns[col.id] || []}
-                onTaskClick={(task) => setSelectedTaskForDetail(task)}
-                onQuickAdd={(status) => setQuickAddStatus(status)}
+                onTaskClick={handleTaskClick}
+                onQuickAdd={handleQuickAdd}
               />
             ))}
           </div>
 
-          <DragOverlay>
-            {activeTask ? <KanbanCard task={activeTask} isOverlay /> : null}
+          <DragOverlay
+            dropAnimation={{
+              duration: 150,
+              easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
+            }}
+          >
+            {activeTask ? <KanbanCardOverlay task={activeTask} /> : null}
           </DragOverlay>
         </DndContext>
       )}

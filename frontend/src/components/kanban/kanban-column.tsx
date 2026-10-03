@@ -1,14 +1,17 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { useDroppable } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { Task } from '@/hooks/use-tasks';
-import { KanbanCard } from './kanban-card';
-import { Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Task } from "@/hooks/use-tasks";
+import { cn } from "@/lib/utils";
+import { useDroppable } from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { Plus } from "lucide-react";
+import React, { useMemo } from "react";
+import { KanbanCard } from "./kanban-card";
 
 export interface ColumnDefinition {
   id: string;
@@ -24,7 +27,7 @@ interface KanbanColumnProps {
   onQuickAdd?: (status: string) => void;
 }
 
-export function KanbanColumn({
+export const KanbanColumn = React.memo(function KanbanColumn({
   column,
   tasks,
   onTaskClick,
@@ -33,36 +36,49 @@ export function KanbanColumn({
   const { setNodeRef, isOver } = useDroppable({
     id: column.id,
     data: {
-      type: 'Column',
+      type: "Column",
       column,
     },
   });
 
-  const totalPoints = tasks.reduce((sum, t) => sum + (t.storyPoints || 0), 0);
+  const totalPoints = useMemo(
+    () => tasks.reduce((sum, t) => sum + (t.storyPoints || 0), 0),
+    [tasks],
+  );
+
+  const taskIds = useMemo(() => tasks.map((t) => t.id), [tasks]);
 
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        'flex min-h-125 w-76 shrink-0 flex-col rounded-xl border border-border/60 bg-muted/40 p-3 transition-colors',
-        isOver && 'border-primary/40 bg-primary/5 ring-1 ring-primary/20'
+        "flex w-76 shrink-0 flex-col rounded-xl border border-border/60 bg-muted/40 p-3 transition-colors",
+        isOver && "border-primary/40 bg-primary/5 ring-1 ring-primary/20",
       )}
     >
       {/* Column Header */}
       <div className="mb-1 flex items-center justify-between gap-2 border-b border-border/40 pb-3">
         <div className="flex items-center gap-2">
-          <span className={cn('size-2.5 shrink-0 rounded-full', column.dotColor)} />
+          <span
+            className={cn("size-2.5 shrink-0 rounded-full", column.dotColor)}
+          />
           <h3 className="text-sm font-semibold tracking-tight text-foreground">
             {column.title}
           </h3>
-          <Badge variant="secondary" className="h-5 rounded-full px-1.5 text-xs font-semibold">
+          <Badge
+            variant="secondary"
+            className="h-5 rounded-full px-1.5 text-xs font-semibold"
+          >
             {tasks.length}
           </Badge>
         </div>
 
         <div className="flex items-center gap-1">
           {totalPoints > 0 && (
-            <span className="mr-1 text-[11px] font-medium text-muted-foreground" title="Total Story Points">
+            <span
+              className="mr-1 text-[11px] font-medium text-muted-foreground"
+              title="Total Story Points"
+            >
               {totalPoints} pts
             </span>
           )}
@@ -81,7 +97,10 @@ export function KanbanColumn({
       </div>
 
       {/* Cards list with sortable context */}
-      <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+      <SortableContext
+        items={taskIds}
+        strategy={verticalListSortingStrategy}
+      >
         <div className="flex min-h-24 flex-1 flex-col gap-2.5 overflow-y-auto pr-0.5">
           {tasks.map((task) => (
             <KanbanCard key={task.id} task={task} onClick={onTaskClick} />
@@ -96,4 +115,4 @@ export function KanbanColumn({
       </SortableContext>
     </div>
   );
-}
+});

@@ -30,6 +30,7 @@ import {
   useDeleteAttachment,
   useUploadAttachment,
 } from "@/hooks/use-attachments";
+import { useCreateLabel, useLabels } from "@/hooks/use-labels";
 import { useSprints } from "@/hooks/use-sprints";
 import { Task, useDeleteTask, useUpdateTask } from "@/hooks/use-tasks";
 import { cn } from "@/lib/utils";
@@ -37,10 +38,12 @@ import { format } from "date-fns";
 import {
   AlertCircle,
   Calendar as CalendarIcon,
+  Check,
   CheckCircle2,
   Download,
   FileImage,
   FileText,
+  Hash,
   Layers,
   Loader2,
   Paperclip,
@@ -52,6 +55,18 @@ import {
   X,
 } from "lucide-react";
 import React, { useState } from "react";
+
+const PRESET_LABEL_COLORS = [
+  "#ef4444", // Red
+  "#f97316", // Orange
+  "#eab308", // Yellow
+  "#10b981", // Green
+  "#06b6d4", // Cyan
+  "#3b82f6", // Blue
+  "#8b5cf6", // Purple
+  "#ec4899", // Pink
+  "#64748b", // Slate
+];
 
 function formatFileSize(bytes: number) {
   if (!bytes) return "0 B";
@@ -89,6 +104,38 @@ function TaskDetailForm({
   const [dueDate, setDueDate] = useState<Date | undefined>(
     task.dueDate ? new Date(task.dueDate) : undefined,
   );
+
+  const [selectedLabels, setSelectedLabels] = useState<
+    { id: string; name: string; color: string }[]
+  >(task.taskLabels?.map((tl) => tl.label) || []);
+
+  const projectId = task.projectId || task.project?.id;
+  const { data: projectLabels = [] } = useLabels(projectId);
+  const createLabel = useCreateLabel();
+  const [labelPopoverOpen, setLabelPopoverOpen] = useState(false);
+  const [labelSearch, setLabelSearch] = useState("");
+  const [newLabelColor, setNewLabelColor] = useState(PRESET_LABEL_COLORS[5]);
+  const [creatingLabelError, setCreatingLabelError] = useState<string | null>(null);
+
+  const handleCreateLabel = async () => {
+    const trimmed = labelSearch.trim();
+    if (!trimmed || !projectId) return;
+    setCreatingLabelError(null);
+    try {
+      const created = await createLabel.mutateAsync({
+        name: trimmed,
+        color: newLabelColor,
+        projectId,
+      });
+      setSelectedLabels((prev) => [...prev, created]);
+      setLabelSearch("");
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message || "Failed to create label";
+      setCreatingLabelError(msg);
+    }
+  };
 
   const { data: sprints } = useSprints({
     projectId: task.projectId || task.project?.id,
@@ -166,7 +213,8 @@ function TaskDetailForm({
           storyPoints !== undefined ? Number(storyPoints) : undefined,
         sprintId: sprintId === "none" ? null : sprintId,
         dueDate: dueDate ? dueDate.toISOString() : null,
-      } as unknown as Partial<Task> & { id: string });
+        labelIds: selectedLabels.map((l) => l.id),
+      });
       onClose();
     } catch (err: unknown) {
       const msg = (
@@ -220,8 +268,8 @@ function TaskDetailForm({
         <div className="grid grid-cols-2 gap-3 rounded-lg border border-border/60 bg-muted/30 p-3.5 md:grid-cols-4">
           {/* Status */}
           <div className="space-y-1">
-            <Label className="flex items-center gap-1 text-[11px] text-muted-foreground">
-              <CheckCircle2 className="size-3" /> Status
+            <Label className="flex h-4 items-center gap-1 text-[11px] font-medium whitespace-nowrap text-muted-foreground">
+              <CheckCircle2 className="size-3 shrink-0" /> Status
             </Label>
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger className="h-8 bg-background text-xs">
@@ -240,8 +288,8 @@ function TaskDetailForm({
 
           {/* Priority */}
           <div className="space-y-1">
-            <Label className="flex items-center gap-1 text-[11px] text-muted-foreground">
-              <Tag className="size-3" /> Priority
+            <Label className="flex h-4 items-center gap-1 text-[11px] font-medium whitespace-nowrap text-muted-foreground">
+              <Tag className="size-3 shrink-0" /> Priority
             </Label>
             <Select value={priority} onValueChange={setPriority}>
               <SelectTrigger className="h-8 bg-background text-xs">
@@ -259,8 +307,8 @@ function TaskDetailForm({
 
           {/* Sprint */}
           <div className="space-y-1">
-            <Label className="flex items-center gap-1 text-[11px] text-muted-foreground">
-              <Layers className="size-3" /> Sprint
+            <Label className="flex h-4 items-center gap-1 text-[11px] font-medium whitespace-nowrap text-muted-foreground">
+              <Layers className="size-3 shrink-0" /> Sprint
             </Label>
             <Select value={sprintId} onValueChange={setSprintId}>
               <SelectTrigger className="h-8 truncate bg-background text-xs">
@@ -279,8 +327,8 @@ function TaskDetailForm({
 
           {/* Story Points */}
           <div className="space-y-1">
-            <Label className="text-[11px] text-muted-foreground">
-              Story Points
+            <Label className="flex h-4 items-center gap-1 text-[11px] font-medium whitespace-nowrap text-muted-foreground">
+              <Hash className="size-3 shrink-0" /> Story Points
             </Label>
             <Input
               type="number"
@@ -381,26 +429,173 @@ function TaskDetailForm({
         </div>
 
         {/* Labels */}
-        {task.taskLabels && task.taskLabels.length > 0 && (
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Labels</Label>
-            <div className="flex flex-wrap gap-1.5">
-              {task.taskLabels.map(({ label }) => (
-                <span
-                  key={label.id}
-                  className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
-                  style={{
-                    backgroundColor: `${label.color}20`,
-                    color: label.color,
-                    border: `1px solid ${label.color}40`,
-                  }}
-                >
-                  {label.name}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="flex items-center gap-1.5 text-xs font-semibold">
+              <Tag className="size-3.5 text-muted-foreground" />
+              Labels
+              {selectedLabels.length > 0 && (
+                <span className="py-0.2 rounded-full bg-muted px-1.5 text-[10px] font-bold text-muted-foreground">
+                  {selectedLabels.length}
                 </span>
-              ))}
-            </div>
+              )}
+            </Label>
+            <Popover open={labelPopoverOpen} onOpenChange={setLabelPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                >
+                  <Plus className="mr-1 size-3" />
+                  Add Label
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-3" align="end">
+                <div className="space-y-2.5">
+                  <div className="text-xs font-semibold text-foreground">
+                    Select or Create Labels
+                  </div>
+                  <Input
+                    placeholder="Search or enter label..."
+                    value={labelSearch}
+                    onChange={(e) => {
+                      setLabelSearch(e.target.value);
+                      setCreatingLabelError(null);
+                    }}
+                    className="h-8 text-xs"
+                  />
+
+                  {/* List of existing project labels */}
+                  <div className="max-h-40 space-y-1 overflow-y-auto">
+                    {projectLabels
+                      .filter((l) =>
+                        l.name.toLowerCase().includes(labelSearch.toLowerCase()),
+                      )
+                      .map((label) => {
+                        const isSelected = selectedLabels.some(
+                          (sl) => sl.id === label.id,
+                        );
+                        return (
+                          <button
+                            key={label.id}
+                            type="button"
+                            onClick={() => {
+                              if (isSelected) {
+                                setSelectedLabels((prev) =>
+                                  prev.filter((l) => l.id !== label.id),
+                                );
+                              } else {
+                                setSelectedLabels((prev) => [...prev, label]);
+                              }
+                            }}
+                            className={cn(
+                              "flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted/80",
+                              isSelected && "bg-muted font-medium",
+                            )}
+                          >
+                            <span className="flex items-center gap-2 truncate">
+                              <span
+                                className="size-2.5 shrink-0 rounded-full"
+                                style={{ backgroundColor: label.color }}
+                              />
+                              <span className="truncate">{label.name}</span>
+                            </span>
+                            {isSelected && (
+                              <Check className="size-3.5 shrink-0 text-primary" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    {projectLabels.filter((l) =>
+                      l.name.toLowerCase().includes(labelSearch.toLowerCase()),
+                    ).length === 0 &&
+                      !labelSearch && (
+                        <div className="py-2 text-center text-[11px] text-muted-foreground">
+                          No labels in this project yet.
+                        </div>
+                      )}
+                  </div>
+
+                  {/* Quick-create label if name typed doesn't exist */}
+                  {labelSearch.trim() &&
+                    !projectLabels.some(
+                      (l) =>
+                        l.name.toLowerCase() ===
+                        labelSearch.trim().toLowerCase(),
+                    ) && (
+                      <div className="space-y-2 border-t pt-2">
+                        <div className="flex items-center gap-1.5">
+                          {PRESET_LABEL_COLORS.map((c) => (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => setNewLabelColor(c)}
+                              className={cn(
+                                "size-4 rounded-full transition-transform hover:scale-110",
+                                newLabelColor === c &&
+                                  "ring-2 ring-primary ring-offset-1",
+                              )}
+                              style={{ backgroundColor: c }}
+                            />
+                          ))}
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleCreateLabel}
+                          disabled={createLabel.isPending}
+                          className="h-7 w-full text-xs"
+                        >
+                          <Plus className="mr-1 size-3" />
+                          Create &quot;{labelSearch.trim()}&quot;
+                        </Button>
+                        {creatingLabelError && (
+                          <div className="text-[11px] text-destructive">
+                            {creatingLabelError}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
-        )}
+
+          <div className="flex min-h-6 flex-wrap items-center gap-1.5">
+            {selectedLabels.map((label) => (
+              <span
+                key={label.id}
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium"
+                style={{
+                  backgroundColor: `${label.color}20`,
+                  color: label.color,
+                  border: `1px solid ${label.color}40`,
+                }}
+              >
+                {label.name}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelectedLabels((prev) =>
+                      prev.filter((l) => l.id !== label.id),
+                    )
+                  }
+                  className="rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/10"
+                  title="Remove label"
+                >
+                  <X className="size-3" />
+                </button>
+              </span>
+            ))}
+            {selectedLabels.length === 0 && (
+              <span className="text-xs text-muted-foreground italic">
+                No labels attached.
+              </span>
+            )}
+          </div>
+        </div>
 
         {/* Attachments */}
         <div className="space-y-2">

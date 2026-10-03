@@ -87,11 +87,25 @@ export function useCreateTask() {
   });
 }
 
+export interface UpdateTaskDto {
+  title?: string;
+  description?: string;
+  status?: string;
+  priority?: string;
+  storyPoints?: number | null;
+  sprintId?: string | null;
+  assigneeId?: string | null;
+  startDate?: string | null;
+  dueDate?: string | null;
+  labelIds?: string[];
+  order?: number;
+}
+
 export function useUpdateTask() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, ...taskData }: Partial<Task> & { id: string }) => {
+    mutationFn: async ({ id, ...taskData }: (UpdateTaskDto & Partial<Task>) & { id: string }) => {
       const { data } = await api.patch<Task>(`/tasks/${id}`, taskData);
       return data;
     },

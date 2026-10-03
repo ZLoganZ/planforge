@@ -1,6 +1,6 @@
 "use client";
-
-import { KanbanCard } from "@/components/kanban/kanban-card";
+ 
+import { KanbanCard, KanbanCardOverlay } from "@/components/kanban/kanban-card";
 import { TaskDetailDialog } from "@/components/kanban/task-detail-dialog";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { SprintModal } from "@/components/sprints/sprint-modal";
@@ -615,7 +615,7 @@ export default function SprintsPage() {
           </div>
 
           <DragOverlay>
-            {activeTask ? <KanbanCard task={activeTask} isOverlay /> : null}
+            {activeTask ? <KanbanCardOverlay task={activeTask} /> : null}
           </DragOverlay>
         </DndContext>
 

@@ -410,7 +410,7 @@ export default function AuditLogPage() {
 
                     {/* Diff & Context Preview Expandable */}
                     {isExpanded && canExpand && (
-                      <div className="animate-in fade-in-50 mt-3 space-y-2.5 rounded-lg border border-border/80 bg-background/60 p-3.5 text-xs duration-150">
+                      <div className="mt-3 animate-in space-y-2.5 rounded-lg border border-border/80 bg-background/60 p-3.5 text-xs duration-150 fade-in-50">
                         <div className="flex items-center gap-1.5 font-semibold text-muted-foreground">
                           <Layers className="size-3.5 text-primary" />
                           <span>Change Details & Context</span>
