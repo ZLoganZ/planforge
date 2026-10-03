@@ -17,10 +17,10 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   Legend,
   Pie,
   PieChart,
+  Rectangle,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -202,7 +202,10 @@ export default function DashboardPage() {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={statusData}
+                        data={statusData.map((entry) => ({
+                          ...entry,
+                          fill: entry.color,
+                        }))}
                         dataKey="count"
                         nameKey="label"
                         cx="50%"
@@ -210,11 +213,7 @@ export default function DashboardPage() {
                         innerRadius={55}
                         outerRadius={85}
                         paddingAngle={3}
-                      >
-                        {statusData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
+                      />
                       <Tooltip
                         contentStyle={{
                           backgroundColor: "var(--card)",
@@ -299,11 +298,17 @@ export default function DashboardPage() {
                           fontWeight: 600,
                         }}
                       />
-                      <Bar dataKey="count" radius={[6, 6, 0, 0]}>
-                        {priorityData.map((entry, index) => (
-                          <Cell key={`bar-${index}`} fill={entry.color} />
-                        ))}
-                      </Bar>
+                      <Bar
+                        dataKey="count"
+                        radius={[6, 6, 0, 0]}
+                        shape={(props) => (
+                          <Rectangle
+                            {...props}
+                            fill={props.payload?.color || props.fill}
+                            radius={[6, 6, 0, 0]}
+                          />
+                        )}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>

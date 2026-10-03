@@ -113,7 +113,7 @@ export default function MembersPage() {
     });
   };
 
-  const handleInviteSubmit = (e: React.FormEvent) => {
+  const handleInviteSubmit = (e: React.SubmitEvent) => {
     e.preventDefault();
     if (!inviteEmail) return;
     // In our backend, mock invite adds or updates user
