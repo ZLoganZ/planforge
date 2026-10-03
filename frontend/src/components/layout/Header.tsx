@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Camera, Loader2, LogOut, Moon, Search, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 
@@ -16,11 +16,22 @@ export function Header() {
   const { theme, setTheme } = useTheme();
   const { user, logout, refreshUser } = useAuth();
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const initials = user
     ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
     : "??";
+
+  const IconTheme = mounted ? (
+    theme === "dark" ? (
+      <Sun className="size-5" />
+    ) : (
+      <Moon className="size-5" />
+    )
+  ) : (
+    <Loader2 className="size-5 animate-spin" />
+  );
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -36,6 +47,10 @@ export function Header() {
       if (avatarInputRef.current) avatarInputRef.current.value = "";
     }
   };
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card/80 px-6 backdrop-blur-lg">
@@ -59,11 +74,7 @@ export function Header() {
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           className="text-muted-foreground hover:text-foreground"
         >
-          {theme === "dark" ? (
-            <Sun className="size-5" />
-          ) : (
-            <Moon className="size-5" />
-          )}
+          {IconTheme}
         </Button>
 
         {/* Notifications */}

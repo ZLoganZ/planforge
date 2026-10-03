@@ -27,7 +27,9 @@ export function RegisterForm() {
   const callbackUrl =
     rawCallbackUrl &&
     rawCallbackUrl.startsWith("/") &&
-    !rawCallbackUrl.startsWith("//")
+    !rawCallbackUrl.startsWith("//") &&
+    !rawCallbackUrl.startsWith("/login") &&
+    !rawCallbackUrl.startsWith("/register")
       ? rawCallbackUrl
       : "/";
 

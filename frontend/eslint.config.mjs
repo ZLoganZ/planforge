@@ -1,7 +1,8 @@
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
-import eslintPluginTailwindcss from "eslint-plugin-tailwindcss";
 import { defineConfig, globalIgnores } from "eslint/config";
+
+import eslintPluginTailwindcss from "eslint-plugin-tailwindcss";
 
 const eslintConfig = defineConfig([
   eslintPluginTailwindcss.configs["flat/recommended"] ||
@@ -28,6 +29,7 @@ const eslintConfig = defineConfig([
       // ring-ring/50, aria-invalid:border-destructive) that eslint-plugin-tailwindcss
       // does not yet recognise. Disable to eliminate false-positive warnings.
       "tailwindcss/no-custom-classname": "off",
+      "react-hooks/set-state-in-effect": "off",
     },
   },
 ]);

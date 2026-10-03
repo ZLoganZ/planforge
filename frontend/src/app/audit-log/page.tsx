@@ -222,7 +222,7 @@ export default function AuditLogPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-9 w-[130px] bg-background/50 text-xs">
+              <SelectTrigger className="h-9 w-32.5 bg-background/50 text-xs">
                 <SelectValue placeholder="All Actions" />
               </SelectTrigger>
               <SelectContent>
@@ -257,7 +257,7 @@ export default function AuditLogPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-9 w-[130px] bg-background/50 text-xs">
+              <SelectTrigger className="h-9 w-32.5 bg-background/50 text-xs">
                 <SelectValue placeholder="All Entities" />
               </SelectTrigger>
               <SelectContent>

@@ -4,7 +4,11 @@ import { hash } from 'bcryptjs';
 
 import type { PaginatedResult } from '../../common/dto/pagination-query.dto.js';
 import { PrismaService } from '../../database/prisma.service.js';
-import { InviteUserDto, QueryUsersDto, UpdateUserDto } from './dto/users.dto.js';
+import {
+  InviteUserDto,
+  QueryUsersDto,
+  UpdateUserDto,
+} from './dto/users.dto.js';
 
 @Injectable()
 export class UsersService {
@@ -233,14 +237,16 @@ export class UsersService {
 
       // Link to workspace if workspace exists
       if (workspaceId) {
-        const existingMembership = await this.prisma.workspaceMember.findUnique({
-          where: {
-            workspaceId_userId: {
-              workspaceId,
-              userId: user.id,
+        const existingMembership = await this.prisma.workspaceMember.findUnique(
+          {
+            where: {
+              workspaceId_userId: {
+                workspaceId,
+                userId: user.id,
+              },
             },
           },
-        });
+        );
 
         if (existingMembership) {
           await this.prisma.workspaceMember.update({

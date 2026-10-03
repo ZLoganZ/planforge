@@ -11,7 +11,11 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
-import { InviteUserDto, QueryUsersDto, UpdateUserDto } from './dto/users.dto.js';
+import {
+  InviteUserDto,
+  QueryUsersDto,
+  UpdateUserDto,
+} from './dto/users.dto.js';
 import { UsersService } from './users.service.js';
 
 @ApiTags('Users')

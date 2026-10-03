@@ -39,7 +39,15 @@ export class AuthController {
   ) {
     const result = await this.authService.login(dto);
 
-    // Set refresh token in HTTP-only cookie
+    // Set auth tokens in HTTP-only cookies
+    res.cookie('access_token', result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 15 * 60 * 1000, // 15 mins
+      path: '/',
+    });
+
     res.cookie('refresh_token', result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -68,6 +76,14 @@ export class AuthController {
       user.refreshToken,
     );
 
+    res.cookie('access_token', tokens.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 15 * 60 * 1000,
+      path: '/',
+    });
+
     res.cookie('refresh_token', tokens.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -90,6 +106,7 @@ export class AuthController {
     const refreshToken = (res.req as any)?.cookies?.['refresh_token'];
     await this.authService.logout(userId, refreshToken);
 
+    res.clearCookie('access_token', { path: '/' });
     res.clearCookie('refresh_token', { path: '/' });
 
     return { message: 'Logged out successfully' };

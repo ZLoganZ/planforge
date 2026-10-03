@@ -37,18 +37,28 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({
+  children,
+  initialUser = null,
+}: {
+  children: ReactNode;
+  initialUser?: User | null;
+}) {
   const queryClient = useQueryClient();
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+
+  const [user, setUser] = useState<User | null>(initialUser);
+  const [isLoading, setIsLoading] = useState(!initialUser);
 
   const fetchProfile = useCallback(async () => {
-    try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
+    if (typeof window !== "undefined") {
+      const pathname = window.location.pathname;
+      if (pathname.startsWith("/login") || pathname.startsWith("/register")) {
         setIsLoading(false);
         return;
       }
+    }
+
+    try {
       const { data } = await authApi.getProfile();
       setUser(data.data || data);
     } catch {
@@ -60,9 +70,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchProfile();
-  }, [fetchProfile]);
+    if (!initialUser) {
+      fetchProfile();
+    }
+  }, [fetchProfile, initialUser]);
 
   const login = async (email: string, password: string) => {
     queryClient.clear();
@@ -91,11 +102,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem("accessToken");
       setUser(null);
       if (typeof window !== "undefined") {
+        const pathname = window.location.pathname;
         const fullPath =
           customCallbackUrl ??
-          window.location.pathname + window.location.search;
+          (pathname !== "/login" && pathname !== "/register"
+            ? window.location.pathname + window.location.search
+            : "");
         const callbackParam =
-          fullPath && fullPath !== "/login" && fullPath !== "/register"
+          fullPath &&
+          fullPath !== "/" &&
+          !fullPath.startsWith("/login") &&
+          !fullPath.startsWith("/register")
             ? `?callbackUrl=${encodeURIComponent(fullPath)}`
             : "";
         // eslint-disable-next-line @next/next/no-location-assign-relative-destination

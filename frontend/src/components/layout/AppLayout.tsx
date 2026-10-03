@@ -15,9 +15,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       if (typeof window !== "undefined") {
+        const pathname = window.location.pathname;
+        if (pathname.startsWith("/login") || pathname.startsWith("/register")) {
+          return;
+        }
         const fullPath = window.location.pathname + window.location.search;
         const callbackParam =
-          fullPath && fullPath !== "/login" && fullPath !== "/register"
+          pathname !== "/"
             ? `?callbackUrl=${encodeURIComponent(fullPath)}`
             : "";
         router.push(`/login${callbackParam}`);

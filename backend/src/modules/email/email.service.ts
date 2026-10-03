@@ -39,7 +39,7 @@ export class EmailService {
       }
     } else {
       this.logger.log(
-        'No SMTP credentials found in environment. Emails will be logged to console in dev mode.'
+        'No SMTP credentials found in environment. Emails will be logged to console in dev mode.',
       );
     }
   }
@@ -111,7 +111,7 @@ export class EmailService {
 
     // In dev / fallback mode: log prominently
     this.logger.log(
-      `\n================ [EMAIL SIMULATION] ================\nTo: ${to}\nSubject: Invitation to join ${workspaceName}\nRole: ${role}\nInvite Link: ${inviteUrl}\n====================================================\n`
+      `\n================ [EMAIL SIMULATION] ================\nTo: ${to}\nSubject: Invitation to join ${workspaceName}\nRole: ${role}\nInvite Link: ${inviteUrl}\n====================================================\n`,
     );
     return true;
   }

@@ -914,9 +914,7 @@ export default function SprintsPage() {
                 trajectory across sprint duration.
               </DialogDescription>
             </DialogHeader>
-            {selectedSprint && (
-              <BurndownChart sprintId={selectedSprint.id} />
-            )}
+            {selectedSprint && <BurndownChart sprintId={selectedSprint.id} />}
           </DialogContent>
         </Dialog>
       </div>

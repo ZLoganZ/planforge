@@ -30,7 +30,7 @@ export class InvitationsController {
   @ApiOperation({ summary: 'Send email invitation to join workspace' })
   async create(
     @CurrentUser('id') userId: string,
-    @Body() dto: CreateInvitationDto
+    @Body() dto: CreateInvitationDto,
   ) {
     return this.invitationsService.create(userId, dto);
   }
@@ -40,7 +40,7 @@ export class InvitationsController {
   @ApiOperation({ summary: 'List all workspace invitations' })
   async findAll(
     @CurrentUser('id') userId: string,
-    @Query('workspaceId') workspaceId?: string
+    @Query('workspaceId') workspaceId?: string,
   ) {
     return this.invitationsService.findAll(userId, workspaceId);
   }
@@ -58,16 +58,25 @@ export class InvitationsController {
   @ApiOperation({ summary: 'Accept invitation and register or join workspace' })
   async accept(
     @Body() dto: AcceptInvitationDto,
-    @Res({ passthrough: true }) res: Response
+    @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.invitationsService.accept(dto);
 
-    // Set refresh token in HTTP-only cookie like in auth.controller
+    // Set auth tokens in HTTP-only cookies
+    res.cookie('access_token', result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 15 * 60 * 1000,
+      path: '/',
+    });
+
     res.cookie('refresh_token', result.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
     });
 
     return result;

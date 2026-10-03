@@ -1,4 +1,5 @@
 import React from "react";
+import { Info, Layers, Loader2 } from "lucide-react";
 import {
   CartesianGrid,
   Legend,
@@ -9,7 +10,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Info, Layers, Loader2 } from "lucide-react";
 
 import { useSprintBurndown } from "@/hooks/use-analytics";
 
@@ -40,12 +40,10 @@ export function BurndownChart({ sprintId }: BurndownChartProps) {
   const { sprint, points } = data;
   const completedPoints =
     sprint.completedPoints ??
-    (sprint.totalPoints -
-      (points.findLast((p) => p.actual !== null)?.actual ??
-        sprint.totalPoints));
+    sprint.totalPoints -
+      (points.findLast((p) => p.actual !== null)?.actual ?? sprint.totalPoints);
   const remainingPoints =
-    sprint.remainingPoints ??
-    Math.max(0, sprint.totalPoints - completedPoints);
+    sprint.remainingPoints ?? Math.max(0, sprint.totalPoints - completedPoints);
   const percentComplete =
     sprint.totalPoints > 0
       ? Math.round((completedPoints / sprint.totalPoints) * 100)
@@ -190,7 +188,8 @@ export function BurndownChart({ sprintId }: BurndownChartProps) {
 
       <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
         <Info className="size-3.5 shrink-0 text-muted-foreground" />
-        The ideal line descends linearly from starting scope to zero. Real burndown plots actual uncompleted story points across sprint days.
+        The ideal line descends linearly from starting scope to zero. Real
+        burndown plots actual uncompleted story points across sprint days.
       </p>
     </div>
   );

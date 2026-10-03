@@ -221,8 +221,8 @@ function ProjectSettingsForm({ project }: { project: ProjectData }) {
               Delete this Project
             </p>
             <p className="text-xs text-muted-foreground">
-              Once deleted, all tasks, sprints, attachments, and activity history
-              are gone.
+              Once deleted, all tasks, sprints, attachments, and activity
+              history are gone.
             </p>
           </div>
           <Button

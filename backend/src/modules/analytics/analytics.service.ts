@@ -313,14 +313,16 @@ export class AnalyticsService {
     }
 
     const totalPoints = sprint.tasks.reduce(
-      (acc, t) => acc + (t.storyPoints && t.storyPoints > 0 ? t.storyPoints : 1),
-      0
+      (acc, t) =>
+        acc + (t.storyPoints && t.storyPoints > 0 ? t.storyPoints : 1),
+      0,
     );
 
     const completedTasks = sprint.tasks.filter((t) => t.status === 'DONE');
     const completedPoints = completedTasks.reduce(
-      (acc, t) => acc + (t.storyPoints && t.storyPoints > 0 ? t.storyPoints : 1),
-      0
+      (acc, t) =>
+        acc + (t.storyPoints && t.storyPoints > 0 ? t.storyPoints : 1),
+      0,
     );
     const remainingPoints = Math.max(0, totalPoints - completedPoints);
 
@@ -351,17 +353,24 @@ export class AnalyticsService {
 
     const totalDays = Math.max(
       1,
-      Math.round((chartEndDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+      Math.round(
+        (chartEndDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+      ),
     );
     const plannedDays = Math.max(
       1,
-      Math.round((plannedEndDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+      Math.round(
+        (plannedEndDate.getTime() - startDate.getTime()) /
+          (1000 * 60 * 60 * 24),
+      ),
     );
 
     const daysData = [];
 
     for (let i = 0; i <= totalDays; i++) {
-      const currentDate = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
+      const currentDate = new Date(
+        startDate.getTime() + i * 24 * 60 * 60 * 1000,
+      );
       const dateStr = currentDate.toISOString().split('T')[0];
       const endOfDay = new Date(currentDate);
       endOfDay.setUTCHours(23, 59, 59, 999);
@@ -369,7 +378,9 @@ export class AnalyticsService {
       // Ideal linear descent from totalPoints to 0 over the planned sprint days
       const idealRemaining = Math.max(
         0,
-        Math.round(totalPoints - (Math.min(i, plannedDays) / plannedDays) * totalPoints)
+        Math.round(
+          totalPoints - (Math.min(i, plannedDays) / plannedDays) * totalPoints,
+        ),
       );
 
       // Determine if this day is past or today
@@ -389,7 +400,9 @@ export class AnalyticsService {
         const completedTasksForDay = sprint.tasks.filter((t) => {
           if (t.status !== 'DONE') return false;
 
-          const compDate = t.completedAt ? new Date(t.completedAt) : new Date(t.updatedAt);
+          const compDate = t.completedAt
+            ? new Date(t.completedAt)
+            : new Date(t.updatedAt);
 
           // In completed sprint, by the final day, all completed tasks are burned down
           if (sprint.status === 'COMPLETED' && i === totalDays) {
@@ -403,8 +416,9 @@ export class AnalyticsService {
         });
 
         completedToDate = completedTasksForDay.reduce(
-          (acc, t) => acc + (t.storyPoints && t.storyPoints > 0 ? t.storyPoints : 1),
-          0
+          (acc, t) =>
+            acc + (t.storyPoints && t.storyPoints > 0 ? t.storyPoints : 1),
+          0,
         );
 
         actualRemaining = Math.max(0, totalPoints - completedToDate);
