@@ -20,7 +20,7 @@ export class AttachmentsService {
     if (!task) throw new NotFoundException('Task not found');
 
     // Upload to S3/MinIO
-    const { key, url } = await this.storage.upload(
+    const { url } = await this.storage.upload(
       file.buffer,
       file.originalname,
       file.mimetype,
