@@ -28,12 +28,12 @@ export class InvitationsService {
     private readonly prisma: PrismaService,
     private readonly emailService: EmailService,
     private readonly authService: AuthService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
   ) {
     this.appUrl =
       this.configService.get<string>('APP_URL') ||
       this.configService.get<string>('CORS_ORIGIN') ||
-      'http://localhost:3001';
+      'http://localhost:3000';
   }
 
   async create(userId: string, dto: CreateInvitationDto) {
@@ -86,7 +86,7 @@ export class InvitationsService {
 
     if (existingMember) {
       throw new ConflictException(
-        `User ${email} is already a member of this workspace`
+        `User ${email} is already a member of this workspace`,
       );
     }
 
@@ -213,7 +213,7 @@ export class InvitationsService {
 
     if (invitation.status !== 'PENDING') {
       throw new BadRequestException(
-        `Invitation has already been ${invitation.status.toLowerCase()}`
+        `Invitation has already been ${invitation.status.toLowerCase()}`,
       );
     }
 

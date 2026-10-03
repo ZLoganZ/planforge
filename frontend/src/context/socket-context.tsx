@@ -42,7 +42,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const socketUrl = process.env.NEXT_PUBLIC_WS_URL || "http://localhost:4001";
+    const socketUrl = process.env.NEXT_PUBLIC_WS_URL || "http://localhost:4000";
     const socketInstance = io(socketUrl, {
       transports: ["websocket", "polling"],
       autoConnect: true,

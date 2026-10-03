@@ -13,10 +13,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('PORT', 4001);
+  const port = configService.get<number>('PORT', 4000);
   const corsOrigin = configService.get<string>(
     'CORS_ORIGIN',
-    'http://localhost:3001',
+    'http://localhost:3000',
   );
 
   // Cookies
@@ -43,7 +43,7 @@ async function bootstrap() {
 
   // CORS
   app.enableCors({
-    origin: [corsOrigin, 'http://localhost:3001', 'http://127.0.0.1:3001'],
+    origin: [corsOrigin, 'http://localhost:3000', 'http://127.0.0.1:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
