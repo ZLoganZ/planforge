@@ -282,8 +282,10 @@ export class ImportExportService {
     const rows = tasks.map((t) => ({
       Key: `${t.project.key}-${t.taskNumber}`,
       Title: t.title,
+      Description: t.description,
       Status: t.status,
       Priority: t.priority,
+      Project: t.project.name,
       Assignee: t.assignee
         ? `${t.assignee.firstName} ${t.assignee.lastName}`
         : 'Unassigned',

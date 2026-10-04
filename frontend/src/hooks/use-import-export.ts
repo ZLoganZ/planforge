@@ -96,9 +96,7 @@ export function useStartTaskImport() {
 
 export async function exportTasksAsCsv(projectId?: string) {
   const query = projectId ? `?projectId=${projectId}` : "";
-  const res = await api.get<Blob>(`/import-export/tasks/export${query}`, {
-    responseType: "blob",
-  });
+  const res = await api.get<string>(`/import-export/tasks/export${query}`);
   const blob = new Blob([res.data], {
     type: "text/csv;charset=utf-8;",
   });
