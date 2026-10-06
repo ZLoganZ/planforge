@@ -113,7 +113,7 @@ function MemberEditForm({
       {/* Avatar preview */}
       <div className="flex items-center gap-4 rounded-xl border border-border/60 bg-muted/30 p-3">
         <Avatar className="size-14 border border-border">
-          <AvatarImage src={avatarUrl || ""} alt={`${firstName} ${lastName}`} />
+          <AvatarImage src={avatarUrl || undefined} alt={`${firstName} ${lastName}`} />
           <AvatarFallback className="bg-primary/20 text-sm font-semibold text-primary">
             {initials}
           </AvatarFallback>

@@ -106,7 +106,7 @@ export function Header() {
             >
               <AvatarImage
                 key={user?.avatarUrl}
-                src={user?.avatarUrl || ""}
+                src={user?.avatarUrl || undefined}
                 alt={user?.firstName}
               />
               <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">

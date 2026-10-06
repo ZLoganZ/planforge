@@ -511,7 +511,7 @@ export function DashboardClient() {
                     >
                       <div className="flex min-w-0 items-center gap-2.5">
                         <Avatar className="size-7">
-                          <AvatarImage src={member.avatarUrl || ""} />
+                          <AvatarImage src={member.avatarUrl || undefined} />
                           <AvatarFallback className="text-[10px] font-bold">
                             {member.name
                               .split(" ")
@@ -739,7 +739,7 @@ export function DashboardClient() {
                     >
                       <div className="flex items-start gap-2.5">
                         <Avatar className="mt-0.5 size-6 shrink-0">
-                          <AvatarImage src={act.actor?.avatarUrl || ""} />
+                          <AvatarImage src={act.actor?.avatarUrl || undefined} />
                           <AvatarFallback className="text-[9px]">
                             {initials}
                           </AvatarFallback>

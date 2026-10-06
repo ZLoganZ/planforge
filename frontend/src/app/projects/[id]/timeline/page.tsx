@@ -431,7 +431,7 @@ export default function ProjectTimelinePage({
                             {task.assignee && (
                               <Avatar className="size-5">
                                 <AvatarImage
-                                  src={task.assignee.avatarUrl || ""}
+                                  src={task.assignee.avatarUrl || undefined}
                                 />
                                 <AvatarFallback className="text-[9px]">
                                   {task.assignee.firstName[0]}

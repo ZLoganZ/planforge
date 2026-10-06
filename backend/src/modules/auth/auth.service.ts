@@ -1,4 +1,4 @@
-import { createHash } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 
 import {
   ConflictException,
@@ -219,7 +219,7 @@ export class AuthService {
   // ─── Helpers ───────────────────────────────────────────────
 
   private async generateTokens(userId: string, email: string) {
-    const payload = { sub: userId, email };
+    const payload = { sub: userId, email, jti: randomUUID() };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {

@@ -77,6 +77,7 @@ import {
   useToggleSubtask,
   useUpdateTask,
 } from "@/hooks/use-tasks";
+import { TaskDeleteModal } from "@/components/tasks/task-delete-modal";
 import { cn, getErrorMessage } from "@/lib/utils";
 
 const PRESET_LABEL_COLORS = [
@@ -113,6 +114,7 @@ function TaskDetailForm({
 }) {
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const [title, setTitle] = useState(task.title || "");
   const [description, setDescription] = useState(task.description || "");
@@ -384,13 +386,6 @@ function TaskDetailForm({
     }
   };
 
-  const handleDelete = async () => {
-    if (confirm("Are you sure you want to delete this task?")) {
-      await deleteTask.mutateAsync(task.id);
-      toast.success("Task deleted");
-      onClose();
-    }
-  };
 
   return (
     <>
@@ -639,7 +634,10 @@ function TaskDetailForm({
                   />
 
                   {/* List of existing project labels */}
-                  <div className="max-h-40 space-y-1 overflow-y-auto">
+                  <div
+                    className="max-h-48 space-y-1 overflow-y-auto overscroll-contain pr-1"
+                    onWheel={(e) => e.stopPropagation()}
+                  >
                     {projectLabels
                       .filter((l) =>
                         l.name.toLowerCase().includes(labelSearch.toLowerCase())
@@ -844,7 +842,7 @@ function TaskDetailForm({
                       {st.assignee && (
                         <span className="flex shrink-0 items-center gap-1 text-[10px] text-muted-foreground">
                           <Avatar className="size-4">
-                            <AvatarImage src={st.assignee.avatarUrl || ""} />
+                            <AvatarImage src={st.assignee.avatarUrl || undefined} />
                             <AvatarFallback className="bg-primary/20 text-[8px] font-semibold text-primary">
                               {st.assignee.firstName[0]}
                             </AvatarFallback>
@@ -1096,7 +1094,7 @@ function TaskDetailForm({
                     className="flex gap-2.5 rounded-lg border border-border/40 bg-muted/20 p-2.5 text-xs"
                   >
                     <Avatar className="mt-0.5 size-6 shrink-0">
-                      <AvatarImage src={c.author?.avatarUrl || ""} />
+                      <AvatarImage src={c.author?.avatarUrl || undefined} />
                       <AvatarFallback className="text-[10px]">
                         {initials}
                       </AvatarFallback>
@@ -1198,8 +1196,7 @@ function TaskDetailForm({
           type="button"
           variant="destructive"
           size="sm"
-          onClick={handleDelete}
-          disabled={deleteTask.isPending}
+          onClick={() => setDeleteOpen(true)}
           className="gap-1.5"
         >
           <Trash2 className="size-3.5" />
@@ -1220,6 +1217,13 @@ function TaskDetailForm({
           </Button>
         </div>
       </DialogFooter>
+
+      <TaskDeleteModal
+        task={task}
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        onSuccess={onClose}
+      />
     </>
   );
 }

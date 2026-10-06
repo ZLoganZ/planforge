@@ -29,7 +29,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Task, useDeleteTask } from "@/hooks/use-tasks";
+import { Task } from "@/hooks/use-tasks";
+
+import { TaskDeleteModal } from "./task-delete-modal";
 
 const statusColors: Record<string, string> = {
   TODO: "outline",
@@ -102,9 +104,9 @@ function TaskTitleCell({ task }: { task: Task }) {
 
 function TaskRowActions({ task }: { task: Task }) {
   const [detailOpen, setDetailOpen] = React.useState(false);
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [copiedKey, setCopiedKey] = React.useState(false);
   const [copiedId, setCopiedId] = React.useState(false);
-  const deleteTask = useDeleteTask();
 
   const taskKey = task.project
     ? `${task.project.key}-${task.taskNumber}`
@@ -122,21 +124,6 @@ function TaskRowActions({ task }: { task: Task }) {
     navigator.clipboard.writeText(task.id);
     setCopiedId(true);
     setTimeout(() => setCopiedId(false), 2000);
-  };
-
-  const handleDelete = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (
-      confirm(
-        `Are you sure you want to delete task "${task.title}" (${taskKey})?`
-      )
-    ) {
-      try {
-        await deleteTask.mutateAsync(task.id);
-      } catch (err) {
-        console.error("Failed to delete task:", err);
-      }
-    }
   };
 
   return (
@@ -173,7 +160,7 @@ function TaskRowActions({ task }: { task: Task }) {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onClick={handleDelete}
+            onClick={() => setDeleteOpen(true)}
             className="cursor-pointer text-destructive focus:text-destructive"
           >
             <Trash2 className="mr-2 size-4" />
@@ -186,6 +173,12 @@ function TaskRowActions({ task }: { task: Task }) {
         task={task}
         open={detailOpen}
         onOpenChange={setDetailOpen}
+      />
+
+      <TaskDeleteModal
+        task={task}
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
       />
     </>
   );
@@ -393,7 +386,7 @@ export const columns: ColumnDef<Task>[] = [
       return (
         <div className="flex items-center gap-2">
           <Avatar className="size-6">
-            <AvatarImage src={assignee.avatarUrl || ""} />
+            <AvatarImage src={assignee.avatarUrl || undefined} />
             <AvatarFallback className="text-[10px]">
               {assignee.firstName[0]}
               {assignee.lastName[0]}

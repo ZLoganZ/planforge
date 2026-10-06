@@ -221,6 +221,12 @@ export const KanbanCard = React.memo(function KanbanCard({
   isOverlay = false,
   onClick,
 }: KanbanCardProps) {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const {
     attributes,
     listeners,
@@ -243,13 +249,19 @@ export const KanbanCard = React.memo(function KanbanCard({
     transition: isDragging ? undefined : transition,
   };
 
+  // Prevent SSR hydration mismatch where @dnd-kit generates aria-describedby only on client
+  const safeAttributes = mounted
+    ? attributes
+    : { ...attributes, "aria-describedby": undefined };
+
   return (
     <div
       ref={setNodeRef}
       data-task-id={task.id}
       style={style}
-      {...attributes}
+      {...safeAttributes}
       {...listeners}
+      suppressHydrationWarning
       className={cn(
         "group relative cursor-grab touch-none will-change-transform select-none active:cursor-grabbing",
         isDragging && "opacity-25"

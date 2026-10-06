@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
-import {
-  dehydrate,
-  HydrationBoundary,
-  QueryClient,
-} from "@tanstack/react-query";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 
 import { getServerSession } from "@/lib/server-auth";
+import { createServerQueryClient } from "@/lib/server-query-client";
 
 import { DashboardClient } from "./dashboard-client";
 
@@ -16,7 +13,7 @@ export const metadata: Metadata = {
 
 export default async function DashboardPage() {
   const session = await getServerSession();
-  const queryClient = new QueryClient();
+  const queryClient = createServerQueryClient();
 
   if (session?.token) {
     const apiUrl =

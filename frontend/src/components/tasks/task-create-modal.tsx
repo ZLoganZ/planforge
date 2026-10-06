@@ -25,6 +25,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -209,17 +210,15 @@ export function TaskCreateModal({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {!isProjectFixed && projects.length > 0 && (
-              <FormItem>
-                <FormLabel>Project</FormLabel>
+              <div className="space-y-2">
+                <Label>Project</Label>
                 <Select
                   value={activeProjectId}
                   onValueChange={(val) => setSelectedProjectId(val)}
                 >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a project" />
-                    </SelectTrigger>
-                  </FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a project" />
+                  </SelectTrigger>
                   <SelectContent>
                     {projects.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
@@ -228,7 +227,7 @@ export function TaskCreateModal({
                     ))}
                   </SelectContent>
                 </Select>
-              </FormItem>
+              </div>
             )}
 
             <FormField

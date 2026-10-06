@@ -2,9 +2,25 @@
 
 import * as React from "react";
 import { Table } from "@tanstack/react-table";
-import { CheckCircle2, Layers, Tag, Trash2, X } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Layers,
+  Loader2,
+  Tag,
+  Trash2,
+  X,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +46,8 @@ export function DataTableBulkActions({ table }: DataTableBulkActionsProps) {
 
   const bulkUpdate = useBulkUpdateTasks();
   const bulkDelete = useBulkDeleteTasks();
+
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
 
   const selectedTaskIds = React.useMemo(
     () => selectedRows.map((r) => r.original.id),
@@ -68,10 +86,13 @@ export function DataTableBulkActions({ table }: DataTableBulkActionsProps) {
     table.resetRowSelection();
   };
 
-  const handleDelete = async () => {
-    if (confirm(`Delete ${selectedCount} selected tasks?`)) {
+  const handleConfirmDelete = async () => {
+    try {
       await bulkDelete.mutateAsync(selectedTaskIds);
       table.resetRowSelection();
+      setDeleteConfirmOpen(false);
+    } catch (err) {
+      console.error("Failed to delete selected tasks:", err);
     }
   };
 
@@ -196,7 +217,7 @@ export function DataTableBulkActions({ table }: DataTableBulkActionsProps) {
         <Button
           variant="destructive"
           size="sm"
-          onClick={handleDelete}
+          onClick={() => setDeleteConfirmOpen(true)}
           disabled={isPending}
           className="h-8 gap-1.5 text-xs shadow-xs"
         >
@@ -215,6 +236,51 @@ export function DataTableBulkActions({ table }: DataTableBulkActionsProps) {
           <X className="size-4" />
         </Button>
       </div>
+
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="gap-2">
+            <div className="flex size-10 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+              <AlertTriangle className="size-5" />
+            </div>
+            <div>
+              <DialogTitle className="text-lg font-semibold">
+                Delete {selectedCount} {selectedCount === 1 ? "Task" : "Tasks"}
+              </DialogTitle>
+              <DialogDescription className="mt-1 text-sm text-muted-foreground">
+                Are you sure you want to delete {selectedCount}{" "}
+                {selectedCount === 1 ? "task" : "tasks"}? This action cannot be
+                undone.
+              </DialogDescription>
+            </div>
+          </DialogHeader>
+
+          <DialogFooter className="mt-2 flex-row justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteConfirmOpen(false)}
+              disabled={bulkDelete.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={bulkDelete.isPending}
+              className="gap-2"
+            >
+              {bulkDelete.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Trash2 className="size-4" />
+              )}
+              {bulkDelete.isPending ? "Deleting..." : "Delete Tasks"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
