@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   closestCorners,
@@ -185,15 +185,51 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
     })
   );
 
+  const recentlyMovedToNewColumn = useRef(false);
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      recentlyMovedToNewColumn.current = false;
+    });
+  }, [dragColumns]);
+
+  const findColumn = useCallback(
+    (id: string, columns: Record<string, Task[]>) => {
+      if (id in columns) {
+        return id;
+      }
+      for (const [colId, tasks] of Object.entries(columns)) {
+        if (tasks.some((t) => t.id === id)) {
+          return colId;
+        }
+      }
+      return undefined;
+    },
+    []
+  );
+
   const collisionDetectionStrategy: CollisionDetection = useCallback((args) => {
     // 1. Point-in-rect check: fast and prevents cross-column jumping
     const pointerCollisions = pointerWithin(args);
     if (pointerCollisions.length > 0) {
+      // Prioritize task card over column droppable if cursor is over a card
+      const itemCollision = pointerCollisions.find(
+        (c) => !COLUMNS.some((col) => col.id === c.id)
+      );
+      if (itemCollision) {
+        return [itemCollision];
+      }
       return pointerCollisions;
     }
     // 2. Intersection fallback
     const intersections = rectIntersection(args);
     if (intersections.length > 0) {
+      const itemIntersection = intersections.find(
+        (c) => !COLUMNS.some((col) => col.id === c.id)
+      );
+      if (itemIntersection) {
+        return [itemIntersection];
+      }
       return intersections;
     }
     return closestCorners(args);
@@ -240,52 +276,26 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
       const overId = over.id as string;
       if (activeId === overId) return;
 
+      if (recentlyMovedToNewColumn.current) return;
+
+      const current = dragColumns || derivedColumns;
+      const activeColumn = findColumn(activeId, current);
+      const overColumn = findColumn(overId, current);
+
+      // If active and over are in the same column, DO NOT mutate state!
+      // SortableContext handles intra-column sorting animations visually.
+      if (!activeColumn || !overColumn || activeColumn === overColumn) {
+        return;
+      }
+
+      recentlyMovedToNewColumn.current = true;
+
       setDragColumns((prev) => {
-        const current = prev || derivedColumns;
+        const stateCurrent = prev || derivedColumns;
+        const sourceList = stateCurrent[activeColumn];
+        const targetList = stateCurrent[overColumn];
 
-        let activeColumn: string | undefined;
-        let overColumn: string | undefined;
-
-        for (const [colId, list] of Object.entries(current)) {
-          if (!activeColumn && list.some((t) => t.id === activeId)) {
-            activeColumn = colId;
-          }
-          if (!overColumn) {
-            if (colId === overId) {
-              overColumn = colId;
-            } else if (list.some((t) => t.id === overId)) {
-              overColumn = colId;
-            }
-          }
-          if (activeColumn && overColumn) break;
-        }
-
-        if (!activeColumn || !overColumn) {
-          return prev;
-        }
-
-        // Case 1: Reordering within the SAME column
-        if (activeColumn === overColumn) {
-          const colList = current[activeColumn];
-          const activeIndex = colList.findIndex((t) => t.id === activeId);
-          const overIndex = colList.findIndex((t) => t.id === overId);
-
-          if (
-            activeIndex !== -1 &&
-            overIndex !== -1 &&
-            activeIndex !== overIndex
-          ) {
-            return {
-              ...current,
-              [activeColumn]: arrayMove(colList, activeIndex, overIndex),
-            };
-          }
-          return prev;
-        }
-
-        // Case 2: Moving from activeColumn into a DIFFERENT overColumn
-        const sourceList = current[activeColumn];
-        const targetList = current[overColumn];
+        if (!sourceList || !targetList) return prev;
 
         const taskIndex = sourceList.findIndex((t) => t.id === activeId);
         if (taskIndex === -1) return prev;
@@ -302,19 +312,20 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
         }
 
         return {
-          ...current,
+          ...stateCurrent,
           [activeColumn]: nextSource,
           [overColumn]: nextTarget,
         };
       });
     },
-    [derivedColumns]
+    [dragColumns, derivedColumns, findColumn]
   );
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event;
       setActiveTask(null);
+      recentlyMovedToNewColumn.current = false;
 
       if (!over) {
         setDragColumns(null);
@@ -325,23 +336,14 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
       const overId = over.id as string;
       const current = dragColumns || derivedColumns;
 
-      let targetCol: string | undefined;
-      for (const [colId, list] of Object.entries(current)) {
-        if (
-          colId === overId ||
-          list.some((t) => t.id === overId || t.id === activeId)
-        ) {
-          targetCol = colId;
-          break;
-        }
-      }
+      const overColumn = findColumn(overId, current);
 
-      if (!targetCol) {
+      if (!overColumn) {
         setDragColumns(null);
         return;
       }
 
-      let targetList = [...(current[targetCol] || [])];
+      let targetList = [...(current[overColumn] || [])];
 
       const activeIndex = targetList.findIndex((t) => t.id === activeId);
       const overIndex = targetList.findIndex((t) => t.id === overId);
@@ -351,8 +353,8 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
       } else if (activeIndex === -1) {
         const activeTaskObj = active.data.current?.task as Task | undefined;
         const movedTask = activeTaskObj
-          ? { ...activeTaskObj, status: targetCol }
-          : ({ id: activeId, status: targetCol } as Task);
+          ? { ...activeTaskObj, status: overColumn }
+          : ({ id: activeId, status: overColumn } as Task);
 
         if (overIndex >= 0) {
           targetList.splice(overIndex, 0, movedTask);
@@ -364,14 +366,19 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
       const itemsToUpdate = targetList.map((task, idx) => ({
         id: task.id,
         position: idx,
-        status: targetCol,
+        status: overColumn,
       }));
+
+      setDragColumns({
+        ...current,
+        [overColumn]: targetList,
+      });
 
       reorderTasks.mutate(itemsToUpdate, {
         onSettled: () => setDragColumns(null),
       });
     },
-    [dragColumns, derivedColumns, reorderTasks]
+    [dragColumns, derivedColumns, findColumn, reorderTasks]
   );
 
   const currentProjectIdForCreation =

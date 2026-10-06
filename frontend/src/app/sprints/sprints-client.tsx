@@ -213,14 +213,45 @@ export function SprintsClient() {
     })
   );
 
+  const recentlyMovedToNewPane = React.useRef(false);
+
+  React.useEffect(() => {
+    requestAnimationFrame(() => {
+      recentlyMovedToNewPane.current = false;
+    });
+  }, [dragPanes]);
+
+  const findPane = React.useCallback(
+    (id: string, panes: PaneTasks): "backlog" | "sprint" | undefined => {
+      if (id === "backlog-droppable") return "backlog";
+      if (id === "sprint-droppable") return "sprint";
+      if (panes.backlog.some((t) => t.id === id)) return "backlog";
+      if (panes.sprint.some((t) => t.id === id)) return "sprint";
+      return undefined;
+    },
+    []
+  );
+
   const collisionDetectionStrategy: CollisionDetection = React.useCallback(
     (args) => {
       const pointerCollisions = pointerWithin(args);
       if (pointerCollisions.length > 0) {
+        const itemCollision = pointerCollisions.find(
+          (c) => c.id !== "backlog-droppable" && c.id !== "sprint-droppable"
+        );
+        if (itemCollision) {
+          return [itemCollision];
+        }
         return pointerCollisions;
       }
       const intersections = rectIntersection(args);
       if (intersections.length > 0) {
+        const itemIntersection = intersections.find(
+          (c) => c.id !== "backlog-droppable" && c.id !== "sprint-droppable"
+        );
+        if (itemIntersection) {
+          return [itemIntersection];
+        }
         return intersections;
       }
       return closestCorners(args);
@@ -252,54 +283,27 @@ export function SprintsClient() {
     const overId = over.id as string;
     if (activeId === overId) return;
 
+    if (recentlyMovedToNewPane.current) return;
+
+    const current = dragPanes || derivedPanes;
+    const activePane = findPane(activeId, current);
+    const overPane = findPane(overId, current);
+
+    // If active and over are in the same pane, DO NOT mutate state!
+    // SortableContext handles intra-pane sorting animations visually.
+    if (!activePane || !overPane || activePane === overPane) {
+      return;
+    }
+    if (overPane === "sprint" && !effectiveSprintId) {
+      return;
+    }
+
+    recentlyMovedToNewPane.current = true;
+
     setDragPanes((prev) => {
-      const current = prev || derivedPanes;
-
-      let activePane: "backlog" | "sprint" | undefined;
-      if (current.backlog.some((t) => t.id === activeId)) {
-        activePane = "backlog";
-      } else if (current.sprint.some((t) => t.id === activeId)) {
-        activePane = "sprint";
-      }
-
-      let overPane: "backlog" | "sprint" | undefined;
-      if (
-        overId === "backlog-droppable" ||
-        current.backlog.some((t) => t.id === overId)
-      ) {
-        overPane = "backlog";
-      } else if (
-        overId === "sprint-droppable" ||
-        current.sprint.some((t) => t.id === overId)
-      ) {
-        overPane = "sprint";
-      }
-
-      if (!activePane || !overPane) return prev;
-      if (overPane === "sprint" && !effectiveSprintId) return prev;
-
-      // Case 1: Reordering within the same pane
-      if (activePane === overPane) {
-        const list = current[activePane];
-        const activeIndex = list.findIndex((t) => t.id === activeId);
-        const overIndex = list.findIndex((t) => t.id === overId);
-
-        if (
-          activeIndex !== -1 &&
-          overIndex !== -1 &&
-          activeIndex !== overIndex
-        ) {
-          return {
-            ...current,
-            [activePane]: arrayMove(list, activeIndex, overIndex),
-          };
-        }
-        return prev;
-      }
-
-      // Case 2: Moving between panes (Backlog <-> Sprint)
-      const sourceList = current[activePane];
-      const targetList = current[overPane];
+      const stateCurrent = prev || derivedPanes;
+      const sourceList = stateCurrent[activePane];
+      const targetList = stateCurrent[overPane];
 
       const taskIndex = sourceList.findIndex((t) => t.id === activeId);
       if (taskIndex === -1) return prev;
@@ -329,7 +333,7 @@ export function SprintsClient() {
       }
 
       return {
-        ...current,
+        ...stateCurrent,
         [activePane]: nextSource,
         [overPane]: nextTarget,
       };
@@ -340,6 +344,7 @@ export function SprintsClient() {
     const { active, over } = event;
     setActiveTask(null);
     setActiveTaskWidth(null);
+    recentlyMovedToNewPane.current = false;
 
     if (!over) {
       setDragPanes(null);
@@ -350,33 +355,51 @@ export function SprintsClient() {
     const overId = over.id as string;
     const current = dragPanes || derivedPanes;
 
-    let targetPane: "backlog" | "sprint" | undefined;
-    if (
-      overId === "sprint-droppable" ||
-      current.sprint.some((t) => t.id === overId || t.id === activeId)
-    ) {
-      targetPane = "sprint";
-    } else if (
-      overId === "backlog-droppable" ||
-      current.backlog.some((t) => t.id === overId || t.id === activeId)
-    ) {
-      targetPane = "backlog";
-    }
+    const overPane = findPane(overId, current);
 
-    if (!targetPane) {
+    if (!overPane) {
       setDragPanes(null);
       return;
     }
 
-    const targetList = current[targetPane];
-    const targetSprintId = targetPane === "sprint" ? effectiveSprintId : null;
+    let targetList = [...current[overPane]];
+    const targetSprintId = overPane === "sprint" ? effectiveSprintId : null;
+
+    const activeIndex = targetList.findIndex((t) => t.id === activeId);
+    const overIndex = targetList.findIndex((t) => t.id === overId);
+
+    if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
+      targetList = arrayMove(targetList, activeIndex, overIndex);
+    } else if (activeIndex === -1) {
+      const activeTaskObj = active.data.current?.task as Task | undefined;
+      const movedTask: Task = activeTaskObj
+        ? {
+            ...activeTaskObj,
+            sprintId: targetSprintId,
+            status:
+              overPane === "sprint"
+                ? activeTaskObj.status === "BACKLOG"
+                  ? "TODO"
+                  : activeTaskObj.status
+                : activeTaskObj.status === "TODO"
+                  ? "BACKLOG"
+                  : activeTaskObj.status,
+          }
+        : ({ id: activeId, sprintId: targetSprintId } as Task);
+
+      if (overIndex >= 0) {
+        targetList.splice(overIndex, 0, movedTask);
+      } else {
+        targetList.push(movedTask);
+      }
+    }
 
     const itemsToUpdate = targetList.map((task, idx) => ({
       id: task.id,
       position: idx,
       sprintId: targetSprintId,
       status:
-        targetPane === "sprint"
+        overPane === "sprint"
           ? task.status === "BACKLOG"
             ? "TODO"
             : task.status
@@ -384,6 +407,11 @@ export function SprintsClient() {
             ? "BACKLOG"
             : task.status,
     }));
+
+    setDragPanes({
+      ...current,
+      [overPane]: targetList,
+    });
 
     reorderTasks.mutate(itemsToUpdate, {
       onSettled: () => setDragPanes(null),
