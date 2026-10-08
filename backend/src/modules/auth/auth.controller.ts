@@ -6,12 +6,14 @@ import {
   HttpStatus,
   Patch,
   Post,
+  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
+import { ExtractJwt } from 'passport-jwt';
 
 import { CurrentUser, Public } from '../../common/decorators/index.js';
 import { AuthService } from './auth.service.js';
@@ -98,18 +100,47 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Logout and revoke refresh token' })
+  @ApiOperation({ summary: 'Logout and revoke access and refresh tokens' })
   async logout(
-    @CurrentUser('id') userId: string,
+    @CurrentUser() user: any,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
+    @Body() body?: { refreshToken?: string },
   ) {
-    const refreshToken = (res.req as any)?.cookies?.['refresh_token'];
-    await this.authService.logout(userId, refreshToken);
+    const rawAccessToken =
+      ExtractJwt.fromAuthHeaderAsBearerToken()(req) ||
+      (req as any)?.cookies?.['access_token'];
+    const refreshToken =
+      body?.refreshToken || (req as any)?.cookies?.['refresh_token'];
+
+    await this.authService.logout(
+      user?.id,
+      refreshToken,
+      rawAccessToken || undefined,
+      user?.jti,
+      user?.exp,
+    );
 
     res.clearCookie('access_token', { path: '/' });
     res.clearCookie('refresh_token', { path: '/' });
 
     return { message: 'Logged out successfully' };
+  }
+
+  @Post('logout-all')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Logout and revoke all sessions on all devices' })
+  async logoutAll(
+    @CurrentUser('id') userId: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.authService.logoutAll(userId);
+
+    res.clearCookie('access_token', { path: '/' });
+    res.clearCookie('refresh_token', { path: '/' });
+
+    return { message: 'Logged out of all devices successfully' };
   }
 
   @Get('profile')

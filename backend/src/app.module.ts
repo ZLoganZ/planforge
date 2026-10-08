@@ -8,6 +8,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { RolesGuard } from './common/guards/roles.guard.js';
 import { HttpLoggerMiddleware } from './common/middleware/http-logger.middleware.js';
 import { PrismaModule } from './database/prisma.module.js';
+import { RedisModule } from './database/redis/redis.module.js';
 import { AnalyticsModule } from './modules/analytics/analytics.module.js';
 import { AttachmentsModule } from './modules/attachments/attachments.module.js';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module.js';
@@ -31,6 +32,7 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
       isGlobal: true,
     }),
     PrismaModule,
+    RedisModule,
     EmailModule,
     AuthModule,
     UsersModule,

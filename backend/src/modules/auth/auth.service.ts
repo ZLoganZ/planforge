@@ -12,6 +12,7 @@ import { compare, hash } from 'bcryptjs';
 
 import { PrismaService } from '../../database/prisma.service.js';
 import { LoginDto, RegisterDto, UpdateProfileDto } from './dto/auth.dto.js';
+import { TokenBlacklistService } from './token-blacklist.service.js';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +22,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly tokenBlacklistService: TokenBlacklistService,
   ) {}
 
   // ─── Register ──────────────────────────────────────────────
@@ -139,7 +141,14 @@ export class AuthService {
 
   // ─── Logout ────────────────────────────────────────────────
 
-  async logout(userId: string, refreshToken: string) {
+  async logout(
+    userId: string,
+    refreshToken?: string,
+    accessToken?: string,
+    jti?: string,
+    exp?: number,
+  ) {
+    // 1. Revoke the current device's refresh token
     if (refreshToken) {
       const tokenHash = this.hashToken(refreshToken);
       await this.prisma.refreshToken.updateMany({
@@ -152,7 +161,30 @@ export class AuthService {
       });
     }
 
-    this.logger.log(`User logged out: ${userId}`);
+    // 2. Blacklist the current device's access token (by jti and token hash)
+    if (accessToken || jti) {
+      await this.tokenBlacklistService.blacklistToken(accessToken, exp, jti);
+    }
+
+    this.logger.log(`User logged out from current device: ${userId}`);
+  }
+
+  // ─── Logout All Devices ──────────────────────────────────────
+
+  async logoutAll(userId: string) {
+    // Revoke all active refresh tokens in database
+    await this.prisma.refreshToken.updateMany({
+      where: {
+        userId,
+        revokedAt: null,
+      },
+      data: { revokedAt: new Date() },
+    });
+
+    // Invalidate all access tokens issued prior to this moment
+    await this.tokenBlacklistService.revokeUserTokens(userId);
+
+    this.logger.log(`User logged out from all devices: ${userId}`);
   }
 
   // ─── Profile ───────────────────────────────────────────────
@@ -219,7 +251,7 @@ export class AuthService {
   // ─── Helpers ───────────────────────────────────────────────
 
   private async generateTokens(userId: string, email: string) {
-    const payload = { sub: userId, email, jti: randomUUID() };
+    const payload = { sub: userId, email, jti: randomUUID(), iatMs: Date.now() };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
