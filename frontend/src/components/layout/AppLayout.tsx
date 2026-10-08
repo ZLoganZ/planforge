@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import type { Route } from "next";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/context/auth-context";
@@ -24,7 +25,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           pathname !== "/"
             ? `?callbackUrl=${encodeURIComponent(fullPath)}`
             : "";
-        router.push(`/login${callbackParam}`);
+        router.push(`/login${callbackParam}` as Route);
       } else {
         router.push("/login");
       }

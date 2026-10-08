@@ -1,3 +1,4 @@
+import { InjectQueue } from '@nestjs/bullmq';
 import {
   BadRequestException,
   Injectable,
@@ -11,6 +12,7 @@ import {
   TaskPriority,
   TaskStatus,
 } from '@prisma/client';
+import { Queue } from 'bullmq';
 import { parse } from 'csv-parse/sync';
 import { stringify } from 'csv-stringify/sync';
 
@@ -25,6 +27,7 @@ export class ImportExportService {
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
     private readonly gateway: NotificationsGateway,
+    @InjectQueue('import-export') private importQueue: Queue,
   ) {}
 
   previewCsv(buffer: Buffer) {
@@ -91,15 +94,18 @@ export class ImportExportService {
       },
     });
 
-    // Run processing asynchronously in background
-    this.processTasksImport(job.id, userId, projectId, records).catch((err) => {
-      console.error('Import processing failed:', err);
+    // Run processing asynchronously in background using BullMQ
+    await this.importQueue.add('import-tasks', {
+      jobId: job.id,
+      userId,
+      projectId,
+      records,
     });
 
     return job;
   }
 
-  private async processTasksImport(
+  async processTasksImport(
     jobId: string,
     userId: string,
     projectId: string,

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import type { Route } from "next";
 import { usePathname } from "next/navigation";
 import {
   Activity,
@@ -21,8 +22,15 @@ import {
 import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import type { LucideIcon } from "lucide-react";
 
-const navItems = [
+interface NavItem {
+  title: string;
+  href: Route;
+  icon: LucideIcon;
+}
+
+const navItems: NavItem[] = [
   {
     title: "Dashboard",
     href: "/",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Route } from "next";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   closestCorners,
@@ -91,7 +92,7 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
     const newUrl = params.toString()
       ? `${pathname}?${params.toString()}`
       : pathname;
-    router.replace(newUrl);
+    router.replace(newUrl as Route);
   };
 
   const { data: projectsData } = useProjects();
@@ -525,7 +526,7 @@ export function KanbanBoard({ initialProjectId }: KanbanBoardProps) {
               const newUrl = params.toString()
                 ? `${pathname}?${params.toString()}`
                 : pathname;
-              router.replace(newUrl);
+              router.replace(newUrl as Route);
             }
           }
         }}

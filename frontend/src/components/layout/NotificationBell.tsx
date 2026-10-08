@@ -94,7 +94,7 @@ export function NotificationBell() {
     }
 
     if (item.type === "IMPORT_COMPLETED") {
-      router.push("/tasks");
+      router.push("/import");
       return;
     }
 

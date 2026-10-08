@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import type { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Zap } from "lucide-react";
 
@@ -41,7 +42,7 @@ export function LoginForm() {
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      router.replace(callbackUrl);
+      router.replace(callbackUrl as Route);
     }
   }, [authLoading, isAuthenticated, callbackUrl, router]);
 
@@ -52,7 +53,7 @@ export function LoginForm() {
 
     try {
       await login(email, password);
-      router.push(callbackUrl);
+      router.push(callbackUrl as Route);
     } catch (err) {
       setError(getErrorMessage(err, "Invalid credentials. Please try again."));
     } finally {
@@ -68,10 +69,7 @@ export function LoginForm() {
     );
   }
 
-  const registerHref =
-    callbackUrl !== "/"
-      ? `/register?callbackUrl=${encodeURIComponent(callbackUrl)}`
-      : "/register";
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -168,7 +166,11 @@ export function LoginForm() {
             <p className="text-sm text-muted-foreground">
               Don&apos;t have an account?{" "}
               <Link
-                href={registerHref}
+                href={
+                  callbackUrl !== "/"
+                    ? { pathname: "/register", query: { callbackUrl } }
+                    : "/register"
+                }
                 className="font-medium text-primary hover:underline"
               >
                 Create one

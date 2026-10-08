@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import type { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Zap } from "lucide-react";
 
@@ -43,7 +44,7 @@ export function RegisterForm() {
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      router.replace(callbackUrl);
+      router.replace(callbackUrl as Route);
     }
   }, [authLoading, isAuthenticated, callbackUrl, router]);
 
@@ -58,7 +59,7 @@ export function RegisterForm() {
         callbackUrl !== "/"
           ? `?callbackUrl=${encodeURIComponent(callbackUrl)}`
           : "";
-      router.push(`/login${loginParam}`);
+      router.push(`/login${loginParam}` as Route);
     } catch (err) {
       setError(getErrorMessage(err, "Registration failed. Please try again."));
     } finally {
@@ -74,10 +75,7 @@ export function RegisterForm() {
     );
   }
 
-  const loginHref =
-    callbackUrl !== "/"
-      ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`
-      : "/login";
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -201,7 +199,11 @@ export function RegisterForm() {
             <p className="text-sm text-muted-foreground">
               Already have an account?{" "}
               <Link
-                href={loginHref}
+                href={
+                  callbackUrl !== "/"
+                    ? { pathname: "/login", query: { callbackUrl } }
+                    : "/login"
+                }
                 className="font-medium text-primary hover:underline"
               >
                 Sign in
