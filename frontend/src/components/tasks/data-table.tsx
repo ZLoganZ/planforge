@@ -28,6 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Project } from "@/hooks/use-projects";
 import { Task } from "@/hooks/use-tasks";
 
 import { DataTableBulkActions } from "./data-table-bulk-actions";
@@ -49,7 +50,9 @@ interface DataTableProps<TData, TValue> {
   facets?: {
     statuses?: Record<string, number>;
     priorities?: Record<string, number>;
+    projects?: Record<string, number>;
   };
+  projects?: Project[];
 }
 
 export function DataTable<TData, TValue>({
@@ -65,6 +68,7 @@ export function DataTable<TData, TValue>({
   onColumnFiltersChange: setControlledColumnFilters,
   isLoading,
   facets,
+  projects,
 }: DataTableProps<TData, TValue>) {
   const [internalRowSelection, setInternalRowSelection] = React.useState({});
   const [internalColumnVisibility, setInternalColumnVisibility] =
@@ -124,7 +128,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <DataTableToolbar table={table} facets={facets} />
+      <DataTableToolbar table={table} facets={facets} projects={projects} />
       <DataTableBulkActions table={table as unknown as TanStackTable<Task>} />
       <div className="relative rounded-md border border-border bg-card">
         {isLoading && (

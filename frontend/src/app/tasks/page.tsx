@@ -29,20 +29,36 @@ export default async function TasksPage() {
       sortOrder: "desc",
     };
 
-    await queryClient.query({
-      queryKey: ["tasks", defaultQuery],
-      queryFn: async () => {
-        try {
-          const res = await fetch(
-            `${apiUrl}/tasks?page=1&limit=10&sortBy=createdAt&sortOrder=desc`,
-            {
-              headers: {
-                Authorization: `Bearer ${session.token}`,
-              },
-              cache: "no-store",
-            }
-          );
-          if (!res.ok)
+    await Promise.all([
+      queryClient.query({
+        queryKey: ["tasks", defaultQuery],
+        queryFn: async () => {
+          try {
+            const res = await fetch(
+              `${apiUrl}/tasks?page=1&limit=10&sortBy=createdAt&sortOrder=desc`,
+              {
+                headers: {
+                  Authorization: `Bearer ${session.token}`,
+                },
+                cache: "no-store",
+              }
+            );
+            if (!res.ok)
+              return {
+                items: [],
+                meta: {
+                  page: 1,
+                  limit: 10,
+                  totalItems: 0,
+                  totalPages: 0,
+                  hasNextPage: false,
+                  hasPrevPage: false,
+                  facets: { statuses: {}, priorities: {}, projects: {} },
+                },
+              };
+            const json = await res.json();
+            return json?.data ?? json;
+          } catch {
             return {
               items: [],
               meta: {
@@ -52,27 +68,52 @@ export default async function TasksPage() {
                 totalPages: 0,
                 hasNextPage: false,
                 hasPrevPage: false,
-                facets: { statuses: {}, priorities: {} },
+                facets: { statuses: {}, priorities: {}, projects: {} },
               },
             };
-          const json = await res.json();
-          return json?.data ?? json;
-        } catch {
-          return {
-            items: [],
-            meta: {
-              page: 1,
-              limit: 10,
-              totalItems: 0,
-              totalPages: 0,
-              hasNextPage: false,
-              hasPrevPage: false,
-              facets: { statuses: {}, priorities: {} },
-            },
-          };
-        }
-      },
-    });
+          }
+        },
+      }),
+      queryClient.query({
+        queryKey: ["projects", { workspaceId: undefined }],
+        queryFn: async () => {
+          try {
+            const res = await fetch(`${apiUrl}/projects?limit=50`, {
+              headers: {
+                Authorization: `Bearer ${session.token}`,
+              },
+              cache: "no-store",
+            });
+            if (!res.ok)
+              return {
+                items: [],
+                meta: {
+                  page: 1,
+                  limit: 50,
+                  totalItems: 0,
+                  totalPages: 0,
+                  hasNextPage: false,
+                  hasPrevPage: false,
+                },
+              };
+            const json = await res.json();
+            return json?.data ?? json;
+          } catch {
+            return {
+              items: [],
+              meta: {
+                page: 1,
+                limit: 50,
+                totalItems: 0,
+                totalPages: 0,
+                hasNextPage: false,
+                hasPrevPage: false,
+              },
+            };
+          }
+        },
+      }),
+    ]);
   }
 
   return (

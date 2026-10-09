@@ -14,21 +14,20 @@ import {
 } from 'class-validator';
 
 import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto.js';
-
-const toArray = ({ value }: { value: unknown }) => {
-  if (value === undefined || value === null || value === '') return undefined;
-  if (Array.isArray(value)) return value;
-  if (typeof value === 'string') {
-    return value.includes(',') ? value.split(',') : [value];
-  }
-  return [value];
-};
+import { toArray } from '../../../common/transformers/index.js';
 
 export class QueryTasksDto extends PaginationQueryDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   projectId?: string;
+
+  @ApiPropertyOptional({ isArray: true })
+  @IsOptional()
+  @Transform(toArray)
+  @IsArray()
+  @IsString({ each: true })
+  projectIds?: string[];
 
   @ApiPropertyOptional({ enum: TaskStatus, isArray: true })
   @IsOptional()

@@ -82,7 +82,7 @@ export function DataTableFacetedFilter<TData, TValue>({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-50 p-0" align="start">
+      <PopoverContent className="w-64 p-0" align="start">
         <Command>
           <CommandInput placeholder={title} />
           <CommandList>
@@ -118,11 +118,13 @@ export function DataTableFacetedFilter<TData, TValue>({
                     {option.icon && (
                       <option.icon className="mr-2 size-4 text-muted-foreground" />
                     )}
-                    <span>{option.label}</span>
+                    <span className="truncate" title={option.label}>
+                      {option.label}
+                    </span>
                     {(() => {
                       const count =
                         customFacets !== undefined
-                          ? customFacets[option.value]
+                          ? (customFacets[option.value] ?? 0)
                           : columnFacets?.get(option.value);
                       if (count === undefined) return null;
                       return (

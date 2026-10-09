@@ -20,7 +20,7 @@ export interface Task {
   createdAt: string;
   projectId: string;
   sprintId: string | null;
-  project: { id: string; key: string; name: string };
+  project: { id: string; key: string; name: string; color?: string };
   assignee: {
     id: string;
     firstName: string;
@@ -70,6 +70,7 @@ export interface TasksResponse {
     facets?: {
       statuses?: Record<string, number>;
       priorities?: Record<string, number>;
+      projects?: Record<string, number>;
     };
   };
 }
@@ -81,6 +82,7 @@ export interface TasksQuery {
   sortBy?: string;
   sortOrder?: "asc" | "desc";
   projectId?: string;
+  projectIds?: string[];
   sprintId?: string;
   statuses?: string[];
   priorities?: string[];
@@ -103,6 +105,7 @@ export function useTasks(
       if (query.sortBy) params.append("sortBy", query.sortBy);
       if (query.sortOrder) params.append("sortOrder", query.sortOrder);
       if (query.projectId) params.append("projectId", query.projectId);
+      query.projectIds?.forEach((id) => params.append("projectIds", id));
       if (query.sprintId) params.append("sprintId", query.sprintId);
 
       query.statuses?.forEach((status) => params.append("statuses", status));

@@ -1,8 +1,11 @@
+import * as React from "react";
 import { Table } from "@tanstack/react-table";
 import { Search, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Project } from "@/hooks/use-projects";
+import { cn } from "@/lib/utils";
 
 import { DataTableFacetedFilter } from "./data-table-faceted-filter";
 import { DataTableViewOptions } from "./data-table-view-options";
@@ -12,7 +15,9 @@ interface DataTableToolbarProps<TData> {
   facets?: {
     statuses?: Record<string, number>;
     priorities?: Record<string, number>;
+    projects?: Record<string, number>;
   };
+  projects?: Project[];
 }
 
 export const statuses = [
@@ -34,8 +39,25 @@ export const priorities = [
 export function DataTableToolbar<TData>({
   table,
   facets,
+  projects,
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
+
+  const projectOptions = React.useMemo(() => {
+    if (!projects) return [];
+    return projects.map((project) => ({
+      label: project.name,
+      value: project.id,
+      icon: ({ className }: { className?: string }) => (
+        <span className={cn("flex items-center justify-center", className)}>
+          <span
+            className="size-2 shrink-0 rounded-full"
+            style={{ backgroundColor: project.color || "#6366f1" }}
+          />
+        </span>
+      ),
+    }));
+  }, [projects]);
 
   return (
     <div className="flex items-center justify-between">
@@ -51,6 +73,14 @@ export function DataTableToolbar<TData>({
             className="h-8 w-37.5 pl-9 lg:w-62.5"
           />
         </div>
+        {table.getColumn("project") && projectOptions.length > 0 && (
+          <DataTableFacetedFilter
+            column={table.getColumn("project")}
+            title="Project"
+            options={projectOptions}
+            facets={facets?.projects}
+          />
+        )}
         {table.getColumn("status") && (
           <DataTableFacetedFilter
             column={table.getColumn("status")}

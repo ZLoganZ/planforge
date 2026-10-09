@@ -16,11 +16,15 @@ import { TaskCreateModal } from "@/components/tasks/task-create-modal";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TasksQuery, useTasks } from "@/hooks/use-tasks";
+import { useProjects } from "@/hooks/use-projects";
 import { tasksApi } from "@/lib/api";
 
 export function TasksClient() {
   const searchParams = useSearchParams();
-  const projectId = searchParams.get("projectId") || undefined;
+  const urlProjectId = searchParams.get("projectId") || undefined;
+
+  const { data: projectsData } = useProjects();
+  const projects = projectsData?.items || [];
 
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -29,13 +33,33 @@ export function TasksClient() {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "createdAt", desc: true },
   ]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() =>
+    urlProjectId ? [{ id: "project", value: [urlProjectId] }] : []
+  );
   const [isExporting, setIsExporting] = useState(false);
+
+  // Synchronize URL projectId changes (e.g. back/forward navigation)
+  const lastUrlProjectIdRef = useRef(urlProjectId);
+  useEffect(() => {
+    if (urlProjectId !== lastUrlProjectIdRef.current) {
+      lastUrlProjectIdRef.current = urlProjectId;
+      if (urlProjectId) {
+        setColumnFilters((prev) => [
+          ...prev.filter((f) => f.id !== "project"),
+          { id: "project", value: [urlProjectId] },
+        ]);
+      } else {
+        setColumnFilters((prev) => prev.filter((f) => f.id !== "project"));
+      }
+    }
+  }, [urlProjectId]);
 
   // Extract filters from columnFilters
   const rawSearch = columnFilters.find((f) => f.id === "title")?.value as
     | string
     | undefined;
+  const projectFilter = columnFilters.find((f) => f.id === "project")
+    ?.value as string[] | undefined;
   const statusFilter = columnFilters.find((f) => f.id === "status")?.value as
     | string[]
     | undefined;
@@ -54,28 +78,28 @@ export function TasksClient() {
   // Reset pageIndex to 0 when search or filters change
   const prevFiltersRef = useRef({
     debouncedSearch,
+    projectFilter,
     statusFilter,
     priorityFilter,
-    projectId,
   });
   useEffect(() => {
     if (
       prevFiltersRef.current.debouncedSearch !== debouncedSearch ||
+      prevFiltersRef.current.projectFilter !== projectFilter ||
       prevFiltersRef.current.statusFilter !== statusFilter ||
-      prevFiltersRef.current.priorityFilter !== priorityFilter ||
-      prevFiltersRef.current.projectId !== projectId
+      prevFiltersRef.current.priorityFilter !== priorityFilter
     ) {
       prevFiltersRef.current = {
         debouncedSearch,
+        projectFilter,
         statusFilter,
         priorityFilter,
-        projectId,
       };
       setPagination((prev) =>
         prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 }
       );
     }
-  }, [debouncedSearch, statusFilter, priorityFilter, projectId]);
+  }, [debouncedSearch, projectFilter, statusFilter, priorityFilter]);
 
   // Reset pageIndex to 0 when sorting changes
   const sort = sorting[0];
@@ -104,7 +128,9 @@ export function TasksClient() {
       sortOrder,
     };
     if (debouncedSearch.trim()) q.search = debouncedSearch.trim();
-    if (projectId) q.projectId = projectId;
+    if (projectFilter && projectFilter.length > 0) {
+      q.projectIds = projectFilter;
+    }
     if (statusFilter && statusFilter.length > 0) q.statuses = statusFilter;
     if (priorityFilter && priorityFilter.length > 0)
       q.priorities = priorityFilter;
@@ -115,7 +141,7 @@ export function TasksClient() {
     sortBy,
     sortOrder,
     debouncedSearch,
-    projectId,
+    projectFilter,
     statusFilter,
     priorityFilter,
   ]);
@@ -126,7 +152,9 @@ export function TasksClient() {
     try {
       setIsExporting(true);
       await tasksApi.exportCsv({
-        ...(projectId ? { projectId } : {}),
+        ...(projectFilter && projectFilter.length > 0
+          ? { projectIds: projectFilter }
+          : {}),
         ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
         ...(statusFilter && statusFilter.length > 0
           ? { statuses: statusFilter }
@@ -197,6 +225,7 @@ export function TasksClient() {
             columnFilters={columnFilters}
             onColumnFiltersChange={setColumnFilters}
             isLoading={isFetching}
+            projects={projects}
           />
         )}
       </div>

@@ -236,8 +236,22 @@ export const attachmentsApi = {
 // Tasks Export
 export const tasksApi = {
   exportCsv: async (params?: Record<string, unknown>) => {
-    const response = await api.get("/import-export/tasks/export", {
-      params,
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, val]) => {
+        if (val === undefined || val === null || val === "") return;
+        if (Array.isArray(val)) {
+          val.forEach((item) => searchParams.append(key, String(item)));
+        } else {
+          searchParams.append(key, String(val));
+        }
+      });
+    }
+    const queryString = searchParams.toString();
+    const endpoint = queryString
+      ? `/import-export/tasks/export?${queryString}`
+      : "/import-export/tasks/export";
+    const response = await api.get(endpoint, {
       responseType: "blob",
     });
     const blob = new Blob([response.data as BlobPart], {

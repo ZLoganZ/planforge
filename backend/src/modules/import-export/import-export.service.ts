@@ -275,11 +275,29 @@ export class ImportExportService {
   }
 
   async exportTasks(query: ExportQueryDto) {
+    const targetProjectIds = query.projectIds?.length
+      ? query.projectIds
+      : query.projectId
+        ? [query.projectId]
+        : undefined;
+
+    const targetStatuses = query.statuses?.length
+      ? query.statuses
+      : query.status
+        ? [query.status]
+        : undefined;
+
+    const targetPriorities = query.priorities?.length
+      ? query.priorities
+      : query.priority
+        ? [query.priority]
+        : undefined;
+
     const where: Prisma.TaskWhereInput = {
       deletedAt: null,
-      ...(query.projectId ? { projectId: query.projectId } : {}),
-      ...(query.status ? { status: query.status as TaskStatus } : {}),
-      ...(query.priority ? { priority: query.priority as TaskPriority } : {}),
+      ...(targetProjectIds?.length ? { projectId: { in: targetProjectIds } } : {}),
+      ...(targetStatuses?.length ? { status: { in: targetStatuses as TaskStatus[] } } : {}),
+      ...(targetPriorities?.length ? { priority: { in: targetPriorities as TaskPriority[] } } : {}),
     };
 
     const tasks = await this.prisma.task.findMany({

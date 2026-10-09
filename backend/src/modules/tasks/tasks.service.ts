@@ -123,6 +123,7 @@ export class TasksService {
       sortBy = 'createdAt',
       sortOrder = 'desc',
       projectId,
+      projectIds,
       statuses,
       priorities,
       assignees,
@@ -130,9 +131,15 @@ export class TasksService {
       sprintId,
     } = query;
 
+    const targetProjectIds = projectIds?.length
+      ? Array.from(new Set(projectIds))
+      : projectId
+        ? [projectId]
+        : undefined;
+
     const where: Prisma.TaskWhereInput = {
       deletedAt: null,
-      ...(projectId && { projectId }),
+      ...(targetProjectIds?.length && { projectId: { in: targetProjectIds } }),
       ...(sprintId && { sprintId }),
       ...(statuses?.length && { status: { in: statuses } }),
       ...(priorities?.length && { priority: { in: priorities } }),
@@ -160,7 +167,6 @@ export class TasksService {
 
     const baseFacetWhere: Prisma.TaskWhereInput = {
       deletedAt: null,
-      ...(projectId && { projectId }),
       ...(sprintId && { sprintId }),
       ...(assignees?.length && { assigneeId: { in: assignees } }),
       ...(labels?.length && {
@@ -185,15 +191,24 @@ export class TasksService {
 
     const statusFacetWhere: Prisma.TaskWhereInput = {
       ...baseFacetWhere,
+      ...(targetProjectIds?.length && { projectId: { in: targetProjectIds } }),
       ...(priorities?.length && { priority: { in: priorities } }),
     };
 
     const priorityFacetWhere: Prisma.TaskWhereInput = {
       ...baseFacetWhere,
+      ...(targetProjectIds?.length && { projectId: { in: targetProjectIds } }),
       ...(statuses?.length && { status: { in: statuses } }),
     };
 
-    const [items, totalItems, statusGroups, priorityGroups] = await Promise.all([
+    const projectFacetWhere: Prisma.TaskWhereInput = {
+      ...baseFacetWhere,
+      ...(statuses?.length && { status: { in: statuses } }),
+      ...(priorities?.length && { priority: { in: priorities } }),
+    };
+
+    const [items, totalItems, statusGroups, priorityGroups, projectGroups] =
+      await Promise.all([
       this.prisma.task.findMany({
         where,
         include: {
@@ -216,7 +231,7 @@ export class TasksService {
             },
           },
           project: {
-            select: { id: true, key: true, name: true },
+            select: { id: true, key: true, name: true, color: true },
           },
           taskLabels: {
             include: {
@@ -257,6 +272,11 @@ export class TasksService {
         _count: { id: true },
         where: priorityFacetWhere,
       }),
+      this.prisma.task.groupBy({
+        by: ['projectId'],
+        _count: { id: true },
+        where: projectFacetWhere,
+      }),
     ]);
 
     const statusCounts: Record<string, number> = {
@@ -281,6 +301,11 @@ export class TasksService {
       priorityCounts[group.priority] = group._count.id;
     }
 
+    const projectCounts: Record<string, number> = {};
+    for (const group of projectGroups) {
+      projectCounts[group.projectId] = group._count.id;
+    }
+
     const totalPages = Math.ceil(totalItems / limit);
 
     return {
@@ -295,6 +320,7 @@ export class TasksService {
         facets: {
           statuses: statusCounts,
           priorities: priorityCounts,
+          projects: projectCounts,
         },
       },
     };

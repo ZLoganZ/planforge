@@ -224,6 +224,7 @@ export const columns: ColumnDef<Task>[] = [
     },
   },
   {
+    id: "project",
     accessorKey: "project",
     header: "Project",
     cell: ({ row }) => {
@@ -232,7 +233,14 @@ export const columns: ColumnDef<Task>[] = [
         return <span className="text-xs text-muted-foreground">—</span>;
       return (
         <div className="flex items-center gap-1.5 text-xs font-medium whitespace-nowrap">
-          <FolderKanban className="size-3.5 shrink-0 text-primary" />
+          {project.color ? (
+            <span
+              className="size-2 shrink-0 rounded-full"
+              style={{ backgroundColor: project.color }}
+            />
+          ) : (
+            <FolderKanban className="size-3.5 shrink-0 text-primary" />
+          )}
           <span className="max-w-28 truncate" title={project.name}>
             {project.name}
           </span>
@@ -244,6 +252,12 @@ export const columns: ColumnDef<Task>[] = [
           </Badge>
         </div>
       );
+    },
+    filterFn: (row, _id, value) => {
+      const projectId = row.original.project?.id || row.original.projectId;
+      return Array.isArray(value)
+        ? value.includes(projectId)
+        : value === projectId;
     },
   },
   {
