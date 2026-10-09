@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Camera, Loader2, LogOut, Moon, Search, Sun } from "lucide-react";
+import Link from "next/link";
+import { Camera, Loader2, LogOut, Moon, Search, Settings, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -127,6 +128,18 @@ export function Header() {
               <Camera className="size-3.5 text-white" />
             </div>
           </div>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            asChild
+            className="text-muted-foreground hover:text-foreground"
+            title="Settings & Profile"
+          >
+            <Link href="/settings">
+              <Settings className="size-4" />
+            </Link>
+          </Button>
 
           <Button
             variant="ghost"

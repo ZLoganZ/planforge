@@ -50,5 +50,10 @@ export interface PaginatedResult<T> {
     totalPages: number;
     hasNextPage: boolean;
     hasPrevPage: boolean;
+    facets?: {
+      statuses?: Record<string, number>;
+      priorities?: Record<string, number>;
+      [key: string]: Record<string, number> | undefined;
+    };
   };
 }

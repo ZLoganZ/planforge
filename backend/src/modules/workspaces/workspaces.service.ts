@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -231,6 +232,29 @@ export class WorkspacesService {
           userId: memberUserId,
         },
       },
+    });
+  }
+
+  async remove(id: string, userId: string) {
+    await this.findOne(id);
+
+    const member = await this.prisma.workspaceMember.findUnique({
+      where: {
+        workspaceId_userId: {
+          workspaceId: id,
+          userId,
+        },
+      },
+    });
+
+    if (!member || member.role !== Role.OWNER) {
+      throw new ForbiddenException(
+        'Only the workspace owner can delete the workspace',
+      );
+    }
+
+    return this.prisma.workspace.delete({
+      where: { id },
     });
   }
 }

@@ -19,12 +19,13 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
-import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
+import { Audit, CurrentUser } from '../../common/decorators/index.js';
 import { ExportQueryDto, StartImportDto } from './dto/import-export.dto.js';
 import { ImportExportService } from './import-export.service.js';
 
 @ApiTags('import-export')
 @ApiBearerAuth()
+@Audit({ skip: true })
 @Controller('import-export')
 export class ImportExportController {
   constructor(private readonly importExportService: ImportExportService) {}

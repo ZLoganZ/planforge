@@ -11,11 +11,14 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  OnChangeFn,
+  PaginationState,
   SortingState,
   useReactTable,
   VisibilityState,
   type Table as TanStackTable,
 } from "@tanstack/react-table";
+import { Loader2 } from "lucide-react";
 
 import {
   Table,
@@ -34,37 +37,83 @@ import { DataTableToolbar } from "./data-table-toolbar";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  pageCount?: number;
+  totalRows?: number;
+  pagination?: PaginationState;
+  onPaginationChange?: OnChangeFn<PaginationState>;
+  sorting?: SortingState;
+  onSortingChange?: OnChangeFn<SortingState>;
+  columnFilters?: ColumnFiltersState;
+  onColumnFiltersChange?: OnChangeFn<ColumnFiltersState>;
+  isLoading?: boolean;
+  facets?: {
+    statuses?: Record<string, number>;
+    priorities?: Record<string, number>;
+  };
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  pageCount,
+  totalRows,
+  pagination: controlledPagination,
+  onPaginationChange: setControlledPagination,
+  sorting: controlledSorting,
+  onSortingChange: setControlledSorting,
+  columnFilters: controlledColumnFilters,
+  onColumnFiltersChange: setControlledColumnFilters,
+  isLoading,
+  facets,
 }: DataTableProps<TData, TValue>) {
-  const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] =
+  const [internalRowSelection, setInternalRowSelection] = React.useState({});
+  const [internalColumnVisibility, setInternalColumnVisibility] =
     React.useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  );
-  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [internalColumnFilters, setInternalColumnFilters] =
+    React.useState<ColumnFiltersState>([]);
+  const [internalSorting, setInternalSorting] = React.useState<SortingState>([]);
+  const [internalPagination, setInternalPagination] =
+    React.useState<PaginationState>({
+      pageIndex: 0,
+      pageSize: 10,
+    });
+
+  const isManualPagination = pageCount !== undefined;
+  const isManualSorting = setControlledSorting !== undefined;
+  const isManualFiltering = setControlledColumnFilters !== undefined;
+
+  const pagination = controlledPagination ?? internalPagination;
+  const onPaginationChange = setControlledPagination ?? setInternalPagination;
+  const sorting = controlledSorting ?? internalSorting;
+  const onSortingChange = setControlledSorting ?? setInternalSorting;
+  const columnFilters = controlledColumnFilters ?? internalColumnFilters;
+  const onColumnFiltersChange =
+    setControlledColumnFilters ?? setInternalColumnFilters;
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,
+    pageCount: isManualPagination ? pageCount : undefined,
+    manualPagination: isManualPagination,
+    manualSorting: isManualSorting,
+    manualFiltering: isManualFiltering,
+    autoResetPageIndex: false,
     getRowId: (row: TData, index: number) =>
       (row as { id?: string }).id ?? String(index),
     state: {
       sorting,
-      columnVisibility,
-      rowSelection,
+      columnVisibility: internalColumnVisibility,
+      rowSelection: internalRowSelection,
       columnFilters,
+      pagination,
     },
     enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setInternalRowSelection,
+    onSortingChange,
+    onColumnFiltersChange,
+    onColumnVisibilityChange: setInternalColumnVisibility,
+    onPaginationChange,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -75,9 +124,14 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <DataTableToolbar table={table} />
+      <DataTableToolbar table={table} facets={facets} />
       <DataTableBulkActions table={table as unknown as TanStackTable<Task>} />
-      <div className="rounded-md border border-border bg-card">
+      <div className="relative rounded-md border border-border bg-card">
+        {isLoading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/40 backdrop-blur-[1px]">
+            <Loader2 className="size-6 animate-spin text-primary" />
+          </div>
+        )}
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -127,7 +181,7 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} />
+      <DataTablePagination table={table} totalRows={totalRows} />
     </div>
   );
 }

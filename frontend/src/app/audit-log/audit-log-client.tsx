@@ -93,6 +93,18 @@ export function AuditLogClient() {
             ASSIGN
           </Badge>
         );
+      case "IMPORT":
+        return (
+          <Badge className="border-indigo-500/30 bg-indigo-500/15 text-indigo-400">
+            IMPORT
+          </Badge>
+        );
+      case "EXPORT":
+        return (
+          <Badge className="border-cyan-500/30 bg-cyan-500/15 text-cyan-400">
+            EXPORT
+          </Badge>
+        );
       default:
         return <Badge variant="outline">{act}</Badge>;
     }
@@ -247,6 +259,12 @@ export function AuditLogClient() {
                 <SelectItem value="COMMENT" className="text-xs">
                   COMMENT
                 </SelectItem>
+                <SelectItem value="IMPORT" className="text-xs">
+                  IMPORT
+                </SelectItem>
+                <SelectItem value="EXPORT" className="text-xs">
+                  EXPORT
+                </SelectItem>
               </SelectContent>
             </Select>
 
@@ -273,8 +291,17 @@ export function AuditLogClient() {
                 <SelectItem value="Sprint" className="text-xs">
                   Sprint
                 </SelectItem>
+                <SelectItem value="Workspace" className="text-xs">
+                  Workspace
+                </SelectItem>
                 <SelectItem value="User" className="text-xs">
                   User
+                </SelectItem>
+                <SelectItem value="Comment" className="text-xs">
+                  Comment
+                </SelectItem>
+                <SelectItem value="Label" className="text-xs">
+                  Label
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -327,6 +354,9 @@ export function AuditLogClient() {
                     taskKey: "Task Key",
                     taskTitle: "Task Title",
                     projectName: "Project",
+                    importedCount: "Imported Count",
+                    errorCount: "Error Count",
+                    fileName: "File Name",
                   };
                   return (
                     map[key] ||
@@ -349,6 +379,9 @@ export function AuditLogClient() {
                 const displayTitle =
                   log.entityDetails?.title ||
                   (log.metadata?.taskTitle as string | undefined) ||
+                  (log.diff?.fileName
+                    ? `Imported ${log.diff?.importedCount ?? ""} tasks (${log.diff?.fileName})`.trim()
+                    : undefined) ||
                   (log.diff?.title && typeof log.diff.title === "object"
                     ? ((log.diff.title as Record<string, unknown>)?.to as
                         string | undefined)
@@ -392,12 +425,14 @@ export function AuditLogClient() {
                             <span className="font-medium text-foreground">
                               {displayTitle || `${log.entityType} Item`}
                             </span>
-                            <span
-                              className="font-mono text-[10px] text-muted-foreground/70"
-                              title={`Full ID: ${log.entityId}`}
-                            >
-                              #{log.entityId.slice(0, 8)}
-                            </span>
+                            {log.entityId && log.entityId !== "unknown" && (
+                              <span
+                                className="font-mono text-[10px] text-muted-foreground/70"
+                                title={`Full ID: ${log.entityId}`}
+                              >
+                                #{log.entityId.slice(0, 8)}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>

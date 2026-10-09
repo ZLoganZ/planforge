@@ -9,6 +9,10 @@ import { DataTableViewOptions } from "./data-table-view-options";
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
+  facets?: {
+    statuses?: Record<string, number>;
+    priorities?: Record<string, number>;
+  };
 }
 
 export const statuses = [
@@ -29,6 +33,7 @@ export const priorities = [
 
 export function DataTableToolbar<TData>({
   table,
+  facets,
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
 
@@ -51,6 +56,7 @@ export function DataTableToolbar<TData>({
             column={table.getColumn("status")}
             title="Status"
             options={statuses}
+            facets={facets?.statuses}
           />
         )}
         {table.getColumn("priority") && (
@@ -58,6 +64,7 @@ export function DataTableToolbar<TData>({
             column={table.getColumn("priority")}
             title="Priority"
             options={priorities}
+            facets={facets?.priorities}
           />
         )}
         {isFiltered && (

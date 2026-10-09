@@ -158,7 +158,42 @@ export class TasksService {
       }),
     };
 
-    const [items, totalItems] = await Promise.all([
+    const baseFacetWhere: Prisma.TaskWhereInput = {
+      deletedAt: null,
+      ...(projectId && { projectId }),
+      ...(sprintId && { sprintId }),
+      ...(assignees?.length && { assigneeId: { in: assignees } }),
+      ...(labels?.length && {
+        taskLabels: {
+          some: { labelId: { in: labels } },
+        },
+      }),
+      ...(search && {
+        OR: [
+          { title: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+          {
+            project: {
+              is: {
+                key: { contains: search.split('-')[0], mode: 'insensitive' },
+              },
+            },
+          },
+        ],
+      }),
+    };
+
+    const statusFacetWhere: Prisma.TaskWhereInput = {
+      ...baseFacetWhere,
+      ...(priorities?.length && { priority: { in: priorities } }),
+    };
+
+    const priorityFacetWhere: Prisma.TaskWhereInput = {
+      ...baseFacetWhere,
+      ...(statuses?.length && { status: { in: statuses } }),
+    };
+
+    const [items, totalItems, statusGroups, priorityGroups] = await Promise.all([
       this.prisma.task.findMany({
         where,
         include: {
@@ -167,6 +202,7 @@ export class TasksService {
               id: true,
               firstName: true,
               lastName: true,
+              email: true,
               avatarUrl: true,
             },
           },
@@ -175,6 +211,7 @@ export class TasksService {
               id: true,
               firstName: true,
               lastName: true,
+              email: true,
               avatarUrl: true,
             },
           },
@@ -197,13 +234,52 @@ export class TasksService {
               status: true,
             },
           },
+          _count: {
+            select: {
+              subTasks: true,
+              comments: true,
+              attachments: true,
+            },
+          },
         },
         orderBy: { [sortBy]: sortOrder },
         skip: (page - 1) * limit,
         take: limit,
       }),
       this.prisma.task.count({ where }),
+      this.prisma.task.groupBy({
+        by: ['status'],
+        _count: { id: true },
+        where: statusFacetWhere,
+      }),
+      this.prisma.task.groupBy({
+        by: ['priority'],
+        _count: { id: true },
+        where: priorityFacetWhere,
+      }),
     ]);
+
+    const statusCounts: Record<string, number> = {
+      BACKLOG: 0,
+      TODO: 0,
+      IN_PROGRESS: 0,
+      IN_REVIEW: 0,
+      DONE: 0,
+    };
+    for (const group of statusGroups) {
+      statusCounts[group.status] = group._count.id;
+    }
+
+    const priorityCounts: Record<string, number> = {
+      URGENT: 0,
+      HIGH: 0,
+      MEDIUM: 0,
+      LOW: 0,
+      NONE: 0,
+    };
+    for (const group of priorityGroups) {
+      priorityCounts[group.priority] = group._count.id;
+    }
 
     const totalPages = Math.ceil(totalItems / limit);
 
@@ -216,6 +292,10 @@ export class TasksService {
         totalPages,
         hasNextPage: page < totalPages,
         hasPrevPage: page > 1,
+        facets: {
+          statuses: statusCounts,
+          priorities: priorityCounts,
+        },
       },
     };
   }

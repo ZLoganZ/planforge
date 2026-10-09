@@ -13,7 +13,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { stringify } from 'csv-stringify/sync';
 import type { Response } from 'express';
 
-import { CurrentUser } from '../../common/decorators/index.js';
+import { Audit, CurrentUser } from '../../common/decorators/index.js';
 import {
   BulkUpdateTasksDto,
   CreateTaskDto,
@@ -25,6 +25,7 @@ import { TasksService } from './tasks.service.js';
 
 @ApiTags('Tasks')
 @ApiBearerAuth('JWT-auth')
+@Audit({ skip: true })
 @Controller('tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
@@ -52,22 +53,51 @@ export class TasksController {
     });
 
     const rows = items.map((task: any) => ({
-      'Task Key': task.project
+      Key: task.project
         ? `${task.project.key}-${task.taskNumber}`
         : `#${task.taskNumber}`,
       Title: task.title,
+      Description: task.description || '',
       Status: task.status,
       Priority: task.priority,
-      'Story Points': task.storyPoints ?? '',
+      Project: task.project?.name ?? '',
+      'Project Key': task.project?.key ?? '',
       Assignee: task.assignee
-        ? `${task.assignee.firstName} ${task.assignee.lastName}`
+        ? `${task.assignee.firstName} ${task.assignee.lastName}`.trim()
         : 'Unassigned',
-      Sprint: task.sprint?.name ?? '',
+      'Assignee Email': task.assignee?.email || '',
+      Reporter: task.reporter
+        ? `${task.reporter.firstName} ${task.reporter.lastName}`.trim()
+        : 'Unassigned',
+      'Reporter Email': task.reporter?.email || '',
+      Sprint: task.sprint?.name ?? 'Backlog',
+      'Story Points': task.storyPoints ?? '',
+      Labels:
+        task.taskLabels
+          ?.map((tl: any) => tl.label?.name)
+          .filter(Boolean)
+          .join(', ') || '',
+      'Parent Task': task.parentTask
+        ? `${task.parentTask.taskNumber}: ${task.parentTask.title}`
+        : '',
+      'Subtasks Count': task._count?.subTasks ?? task.subTasks?.length ?? 0,
+      'Comments Count': task._count?.comments ?? 0,
+      'Attachments Count': task._count?.attachments ?? 0,
+      'Start Date': task.startDate
+        ? new Date(task.startDate).toISOString().split('T')[0]
+        : '',
       'Due Date': task.dueDate
         ? new Date(task.dueDate).toISOString().split('T')[0]
         : '',
-      'Created At': new Date(task.createdAt).toISOString().split('T')[0],
-      Project: task.project?.name ?? '',
+      'Completed At': task.completedAt
+        ? new Date(task.completedAt).toISOString().split('T')[0]
+        : '',
+      'Created At': task.createdAt
+        ? new Date(task.createdAt).toISOString()
+        : '',
+      'Updated At': task.updatedAt
+        ? new Date(task.updatedAt).toISOString()
+        : '',
     }));
 
     const csv = stringify(rows, { header: true });

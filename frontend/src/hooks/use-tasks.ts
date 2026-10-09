@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
 
@@ -62,6 +67,10 @@ export interface TasksResponse {
     totalPages: number;
     hasNextPage: boolean;
     hasPrevPage: boolean;
+    facets?: {
+      statuses?: Record<string, number>;
+      priorities?: Record<string, number>;
+    };
   };
 }
 
@@ -106,6 +115,7 @@ export function useTasks(
       );
       return data;
     },
+    placeholderData: keepPreviousData,
     ...options,
   });
 }

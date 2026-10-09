@@ -5,6 +5,7 @@ import { Table } from "@tanstack/react-table";
 import {
   AlertTriangle,
   CheckCircle2,
+  Download,
   Layers,
   Loader2,
   Tag,
@@ -94,6 +95,58 @@ export function DataTableBulkActions({ table }: DataTableBulkActionsProps) {
     } catch (err) {
       console.error("Failed to delete selected tasks:", err);
     }
+  };
+
+  const handleExportSelected = () => {
+    const csvRows = [
+      [
+        "Key",
+        "Title",
+        "Description",
+        "Status",
+        "Priority",
+        "Project",
+        "Assignee",
+        "Reporter",
+        "Sprint",
+        "Story Points",
+        "Labels",
+        "Due Date",
+        "Created At",
+      ],
+      ...selectedRows.map((r) => [
+        `"${(r.original.project?.key ? `${r.original.project.key}-${r.original.taskNumber}` : `PF-${r.original.taskNumber}`)}"`,
+        `"${(r.original.title || "").replace(/"/g, '""')}"`,
+        `"${(r.original.description || "").replace(/"/g, '""')}"`,
+        r.original.status,
+        r.original.priority,
+        `"${(r.original.project?.name || "").replace(/"/g, '""')}"`,
+        `"${(r.original.assignee ? `${r.original.assignee.firstName} ${r.original.assignee.lastName}`.trim() : "Unassigned").replace(/"/g, '""')}"`,
+        `"${(r.original.reporter ? `${r.original.reporter.firstName} ${r.original.reporter.lastName}`.trim() : "Unassigned").replace(/"/g, '""')}"`,
+        `"${(r.original.sprint?.name || "Backlog").replace(/"/g, '""')}"`,
+        r.original.storyPoints ?? "",
+        `"${(r.original.taskLabels?.map((tl) => tl.label.name).join(", ") || "").replace(/"/g, '""')}"`,
+        r.original.dueDate
+          ? new Date(r.original.dueDate).toISOString().split("T")[0]
+          : "",
+        r.original.createdAt
+          ? new Date(r.original.createdAt).toISOString()
+          : "",
+      ]),
+    ];
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      csvRows.map((e) => e.join(",")).join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute(
+      "download",
+      `planforge-selected-tasks-${new Date().toISOString().split("T")[0]}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const isPending = bulkUpdate.isPending || bulkDelete.isPending;
@@ -212,6 +265,18 @@ export function DataTableBulkActions({ table }: DataTableBulkActionsProps) {
             </DropdownMenuContent>
           </DropdownMenu>
         )}
+
+        {/* Export Selected */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleExportSelected}
+          disabled={isPending}
+          className="h-8 gap-1.5 bg-card text-xs"
+        >
+          <Download className="size-3.5 text-muted-foreground" />
+          Export CSV
+        </Button>
 
         {/* Delete */}
         <Button

@@ -1,12 +1,13 @@
 import { BullModule } from '@nestjs/bullmq';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { RolesGuard } from './common/guards/roles.guard.js';
+import { AuditInterceptor } from './common/interceptors/audit.interceptor.js';
 import { HttpLoggerMiddleware } from './common/middleware/http-logger.middleware.js';
 import { PrismaModule } from './database/prisma.module.js';
 import { RedisModule } from './database/redis/redis.module.js';
@@ -72,6 +73,11 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    // Global interceptor for automated audit trail logging
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditInterceptor,
     },
   ],
 })

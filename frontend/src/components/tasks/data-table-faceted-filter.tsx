@@ -29,14 +29,16 @@ interface DataTableFacetedFilterProps<TData, TValue> {
     value: string;
     icon?: React.ComponentType<{ className?: string }>;
   }[];
+  facets?: Record<string, number>;
 }
 
 export function DataTableFacetedFilter<TData, TValue>({
   column,
   title,
   options,
+  facets: customFacets,
 }: DataTableFacetedFilterProps<TData, TValue>) {
-  const facets = column?.getFacetedUniqueValues();
+  const columnFacets = column?.getFacetedUniqueValues();
   const selectedValues = new Set(column?.getFilterValue() as string[]);
 
   return (
@@ -117,11 +119,18 @@ export function DataTableFacetedFilter<TData, TValue>({
                       <option.icon className="mr-2 size-4 text-muted-foreground" />
                     )}
                     <span>{option.label}</span>
-                    {facets?.get(option.value) !== undefined && (
-                      <span className="ml-auto flex size-4 items-center justify-center font-mono text-xs text-muted-foreground">
-                        {facets.get(option.value)}
-                      </span>
-                    )}
+                    {(() => {
+                      const count =
+                        customFacets !== undefined
+                          ? customFacets[option.value]
+                          : columnFacets?.get(option.value);
+                      if (count === undefined) return null;
+                      return (
+                        <span className="ml-auto flex size-4 items-center justify-center font-mono text-xs text-muted-foreground">
+                          {count}
+                        </span>
+                      );
+                    })()}
                   </CommandItem>
                 );
               })}

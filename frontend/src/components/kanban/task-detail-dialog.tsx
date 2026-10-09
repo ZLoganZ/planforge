@@ -105,7 +105,7 @@ interface TaskDetailDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-function TaskDetailForm({
+export function TaskDetailForm({
   task,
   onClose,
 }: {

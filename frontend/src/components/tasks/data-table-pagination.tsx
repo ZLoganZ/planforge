@@ -17,18 +17,34 @@ import {
 
 interface DataTablePaginationProps<TData> {
   table: Table<TData>;
+  totalRows?: number;
 }
 
 export function DataTablePagination<TData>({
   table,
+  totalRows,
 }: DataTablePaginationProps<TData>) {
+  const pageIndex = table.getState().pagination.pageIndex;
+  const pageCount = table.getPageCount();
+  const selectedCount = table.getFilteredSelectedRowModel().rows.length;
+  const totalDisplayRows = totalRows ?? table.getFilteredRowModel().rows.length;
+
+  const displayCurrentPage = pageCount === 0 ? 0 : pageIndex + 1;
+
   return (
-    <div className="flex items-center justify-between px-2">
+    <div className="flex flex-col items-center justify-between gap-4 px-2 py-1 sm:flex-row">
       <div className="flex-1 text-sm text-muted-foreground">
-        {table.getFilteredSelectedRowModel().rows.length} of{" "}
-        {table.getFilteredRowModel().rows.length} row(s) selected.
+        {selectedCount > 0 ? (
+          <span>
+            {selectedCount} of {totalDisplayRows} row(s) selected.
+          </span>
+        ) : (
+          <span>
+            Total {totalDisplayRows} {totalDisplayRows === 1 ? "task" : "tasks"}
+          </span>
+        )}
       </div>
-      <div className="flex items-center space-x-6 lg:space-x-8">
+      <div className="flex flex-wrap items-center gap-4 sm:gap-6 lg:gap-8">
         <div className="flex items-center space-x-2">
           <p className="text-sm font-medium">Rows per page</p>
           <Select
@@ -37,7 +53,7 @@ export function DataTablePagination<TData>({
               table.setPageSize(Number(value));
             }}
           >
-            <SelectTrigger className="h-8 w-17.5">
+            <SelectTrigger className="h-8 w-18">
               <SelectValue placeholder={table.getState().pagination.pageSize} />
             </SelectTrigger>
             <SelectContent side="top">
@@ -49,16 +65,15 @@ export function DataTablePagination<TData>({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex w-25 items-center justify-center text-sm font-medium">
-          Page {table.getState().pagination.pageIndex + 1} of{" "}
-          {table.getPageCount()}
+        <div className="flex min-w-25 items-center justify-center text-sm font-medium">
+          Page {displayCurrentPage} of {pageCount}
         </div>
         <div className="flex items-center space-x-2">
           <Button
             variant="outline"
             className="hidden size-8 p-0 lg:flex"
             onClick={() => table.setPageIndex(0)}
-            disabled={!table.getCanPreviousPage()}
+            disabled={!table.getCanPreviousPage() || pageCount <= 1}
           >
             <span className="sr-only">Go to first page</span>
             <ChevronsLeft className="size-4" />
@@ -67,7 +82,7 @@ export function DataTablePagination<TData>({
             variant="outline"
             className="size-8 p-0"
             onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
+            disabled={!table.getCanPreviousPage() || pageCount <= 1}
           >
             <span className="sr-only">Go to previous page</span>
             <ChevronLeft className="size-4" />
@@ -76,7 +91,7 @@ export function DataTablePagination<TData>({
             variant="outline"
             className="size-8 p-0"
             onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
+            disabled={!table.getCanNextPage() || pageCount <= 1}
           >
             <span className="sr-only">Go to next page</span>
             <ChevronRight className="size-4" />
@@ -84,8 +99,8 @@ export function DataTablePagination<TData>({
           <Button
             variant="outline"
             className="hidden size-8 p-0 lg:flex"
-            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-            disabled={!table.getCanNextPage()}
+            onClick={() => table.setPageIndex(Math.max(0, pageCount - 1))}
+            disabled={!table.getCanNextPage() || pageCount <= 1}
           >
             <span className="sr-only">Go to last page</span>
             <ChevronsRight className="size-4" />

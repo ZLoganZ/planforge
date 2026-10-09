@@ -117,8 +117,22 @@ export class CommentsService {
       );
     }
 
-    return this.prisma.comment.delete({
+    const deleted = await this.prisma.comment.delete({
       where: { id: commentId },
     });
+
+    void this.prisma.auditLog
+      .create({
+        data: {
+          action: AuditAction.DELETE,
+          entityType: 'Comment',
+          entityId: commentId,
+          actorId: userId,
+          diff: { content: comment.content.slice(0, 100) },
+        },
+      })
+      .catch(() => {});
+
+    return deleted;
   }
 }

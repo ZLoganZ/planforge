@@ -22,21 +22,54 @@ export default async function TasksPage() {
       process.env.NEXT_PUBLIC_API_URL ||
       "http://localhost:4000/api";
 
+    const defaultQuery = {
+      page: 1,
+      limit: 10,
+      sortBy: "createdAt",
+      sortOrder: "desc",
+    };
+
     await queryClient.query({
-      queryKey: ["tasks", { limit: 50 }],
+      queryKey: ["tasks", defaultQuery],
       queryFn: async () => {
         try {
-          const res = await fetch(`${apiUrl}/tasks?limit=50`, {
-            headers: {
-              Authorization: `Bearer ${session.token}`,
-            },
-            cache: "no-store",
-          });
-          if (!res.ok) return { items: [] };
+          const res = await fetch(
+            `${apiUrl}/tasks?page=1&limit=10&sortBy=createdAt&sortOrder=desc`,
+            {
+              headers: {
+                Authorization: `Bearer ${session.token}`,
+              },
+              cache: "no-store",
+            }
+          );
+          if (!res.ok)
+            return {
+              items: [],
+              meta: {
+                page: 1,
+                limit: 10,
+                totalItems: 0,
+                totalPages: 0,
+                hasNextPage: false,
+                hasPrevPage: false,
+                facets: { statuses: {}, priorities: {} },
+              },
+            };
           const json = await res.json();
           return json?.data ?? json;
         } catch {
-          return { items: [] };
+          return {
+            items: [],
+            meta: {
+              page: 1,
+              limit: 10,
+              totalItems: 0,
+              totalPages: 0,
+              hasNextPage: false,
+              hasPrevPage: false,
+              facets: { statuses: {}, priorities: {} },
+            },
+          };
         }
       },
     });

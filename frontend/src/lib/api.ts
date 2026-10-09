@@ -139,6 +139,8 @@ export const authApi = {
 
   updateProfile: (data: { firstName?: string; lastName?: string }) =>
     api.patch("/auth/profile", data),
+
+  logoutAll: () => api.post("/auth/logout-all"),
 };
 
 // Users
@@ -234,7 +236,7 @@ export const attachmentsApi = {
 // Tasks Export
 export const tasksApi = {
   exportCsv: async (params?: Record<string, unknown>) => {
-    const response = await api.get("/tasks/export", {
+    const response = await api.get("/import-export/tasks/export", {
       params,
       responseType: "blob",
     });

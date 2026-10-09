@@ -1,12 +1,13 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
+import { Audit, CurrentUser } from '../../common/decorators/index.js';
 import { CommentsService } from './comments.service.js';
 import { CreateCommentDto } from './dto/comments.dto.js';
 
 @ApiTags('comments')
 @ApiBearerAuth()
+@Audit({ skip: true })
 @Controller()
 export class CommentsController {
   constructor(private readonly commentsService: CommentsService) {}

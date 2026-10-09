@@ -117,7 +117,7 @@ export class ImportExportService {
 
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
-      select: { key: true, _count: { select: { tasks: true } } },
+      select: { key: true, name: true, _count: { select: { tasks: true } } },
     });
 
     let currentTaskCount = project?._count.tasks ?? 0;
@@ -243,6 +243,13 @@ export class ImportExportService {
           errorCount: errors.length,
           fileName: completedJob.fileName,
         },
+        metadata: {
+          taskTitle: `Imported ${successCount} tasks (${completedJob.fileName})`,
+          projectName: project?.name,
+          taskKey: project?.key,
+          fileName: completedJob.fileName,
+          importedCount: successCount,
+        },
       },
     });
   }
@@ -280,7 +287,23 @@ export class ImportExportService {
       include: {
         project: { select: { key: true, name: true } },
         assignee: { select: { firstName: true, lastName: true, email: true } },
+        reporter: { select: { firstName: true, lastName: true, email: true } },
         sprint: { select: { name: true } },
+        taskLabels: { include: { label: { select: { name: true } } } },
+        parentTask: {
+          select: {
+            taskNumber: true,
+            title: true,
+            project: { select: { key: true } },
+          },
+        },
+        _count: {
+          select: {
+            subTasks: true,
+            comments: true,
+            attachments: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -288,17 +311,33 @@ export class ImportExportService {
     const rows = tasks.map((t) => ({
       Key: `${t.project.key}-${t.taskNumber}`,
       Title: t.title,
-      Description: t.description,
+      Description: t.description || '',
       Status: t.status,
       Priority: t.priority,
       Project: t.project.name,
+      'Project Key': t.project.key,
       Assignee: t.assignee
-        ? `${t.assignee.firstName} ${t.assignee.lastName}`
+        ? `${t.assignee.firstName} ${t.assignee.lastName}`.trim()
         : 'Unassigned',
+      'Assignee Email': t.assignee?.email || '',
+      Reporter: t.reporter
+        ? `${t.reporter.firstName} ${t.reporter.lastName}`.trim()
+        : 'Unassigned',
+      'Reporter Email': t.reporter?.email || '',
       Sprint: t.sprint?.name || 'Backlog',
       'Story Points': t.storyPoints ?? '',
+      Labels: t.taskLabels?.map((tl) => tl.label.name).join(', ') || '',
+      'Parent Task': t.parentTask
+        ? `${t.parentTask.project.key}-${t.parentTask.taskNumber}: ${t.parentTask.title}`
+        : '',
+      'Subtasks Count': t._count.subTasks,
+      'Comments Count': t._count.comments,
+      'Attachments Count': t._count.attachments,
+      'Start Date': t.startDate ? t.startDate.toISOString().split('T')[0] : '',
       'Due Date': t.dueDate ? t.dueDate.toISOString().split('T')[0] : '',
+      'Completed At': t.completedAt ? t.completedAt.toISOString().split('T')[0] : '',
       'Created At': t.createdAt.toISOString(),
+      'Updated At': t.updatedAt.toISOString(),
     }));
 
     return stringify(rows, { header: true });
