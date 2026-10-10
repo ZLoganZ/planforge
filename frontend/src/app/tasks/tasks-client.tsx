@@ -15,8 +15,8 @@ import { DataTable } from "@/components/tasks/data-table";
 import { TaskCreateModal } from "@/components/tasks/task-create-modal";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TasksQuery, useTasks } from "@/hooks/use-tasks";
 import { useProjects } from "@/hooks/use-projects";
+import { TasksQuery, useTasks } from "@/hooks/use-tasks";
 import { tasksApi } from "@/lib/api";
 
 export function TasksClient() {
@@ -56,13 +56,11 @@ export function TasksClient() {
 
   // Extract filters from columnFilters
   const rawSearch = columnFilters.find((f) => f.id === "title")?.value as
-    | string
-    | undefined;
-  const projectFilter = columnFilters.find((f) => f.id === "project")
-    ?.value as string[] | undefined;
+    string | undefined;
+  const projectFilter = columnFilters.find((f) => f.id === "project")?.value as
+    string[] | undefined;
   const statusFilter = columnFilters.find((f) => f.id === "status")?.value as
-    | string[]
-    | undefined;
+    string[] | undefined;
   const priorityFilter = columnFilters.find((f) => f.id === "priority")
     ?.value as string[] | undefined;
 

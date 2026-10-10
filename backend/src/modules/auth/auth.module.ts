@@ -6,7 +6,6 @@ import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy.js';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
-
 import { TokenBlacklistService } from './token-blacklist.service.js';
 
 @Module({
@@ -15,7 +14,12 @@ import { TokenBlacklistService } from './token-blacklist.service.js';
     JwtModule.register({}),
   ],
   controllers: [AuthController],
-  providers: [AuthService, TokenBlacklistService, JwtStrategy, JwtRefreshStrategy],
+  providers: [
+    AuthService,
+    TokenBlacklistService,
+    JwtStrategy,
+    JwtRefreshStrategy,
+  ],
   exports: [AuthService, TokenBlacklistService],
 })
 export class AuthModule {}

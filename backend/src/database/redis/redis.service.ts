@@ -26,7 +26,8 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     const host = this.configService.get<string>('REDIS_HOST') || 'localhost';
     const port = Number(this.configService.get<number>('REDIS_PORT')) || 6379;
-    const password = this.configService.get<string>('REDIS_PASSWORD') || undefined;
+    const password =
+      this.configService.get<string>('REDIS_PASSWORD') || undefined;
 
     try {
       this.client = new Redis({
@@ -60,7 +61,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
       this.client.on('close', () => {
         this.isConnected = false;
-        this.logger.warn('Redis connection closed. Falling back to memory cache.');
+        this.logger.warn(
+          'Redis connection closed. Falling back to memory cache.',
+        );
       });
 
       await this.client.connect().catch((err) => {
@@ -100,12 +103,15 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         }
         return;
       } catch (err: any) {
-        this.logger.warn(`Redis set failed (${err.message}), falling back to memory.`);
+        this.logger.warn(
+          `Redis set failed (${err.message}), falling back to memory.`,
+        );
       }
     }
 
     // Memory fallback
-    const expiresAt = ttlSeconds && ttlSeconds > 0 ? Date.now() + ttlSeconds * 1000 : null;
+    const expiresAt =
+      ttlSeconds && ttlSeconds > 0 ? Date.now() + ttlSeconds * 1000 : null;
     this.memoryFallback.set(key, { value, expiresAt });
   }
 
@@ -117,7 +123,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       try {
         return await this.client.get(key);
       } catch (err: any) {
-        this.logger.warn(`Redis get failed (${err.message}), falling back to memory.`);
+        this.logger.warn(
+          `Redis get failed (${err.message}), falling back to memory.`,
+        );
       }
     }
 
@@ -140,7 +148,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         const count = await this.client.exists(key);
         return count > 0;
       } catch (err: any) {
-        this.logger.warn(`Redis exists failed (${err.message}), falling back to memory.`);
+        this.logger.warn(
+          `Redis exists failed (${err.message}), falling back to memory.`,
+        );
       }
     }
 
@@ -163,7 +173,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         await this.client.del(key);
         return;
       } catch (err: any) {
-        this.logger.warn(`Redis del failed (${err.message}), falling back to memory.`);
+        this.logger.warn(
+          `Redis del failed (${err.message}), falling back to memory.`,
+        );
       }
     }
 

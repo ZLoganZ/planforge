@@ -375,8 +375,7 @@ export function MembersClient() {
                     const canEditMember =
                       !isSelf &&
                       (isOwner ||
-                        (member.role !== "OWNER" &&
-                          member.role !== "ADMIN"));
+                        (member.role !== "OWNER" && member.role !== "ADMIN"));
                     const canToggleActiveMember =
                       !isSelf &&
                       member.role !== "OWNER" &&
@@ -474,7 +473,10 @@ export function MembersClient() {
                                     <MoreVertical className="size-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-44">
+                                <DropdownMenuContent
+                                  align="end"
+                                  className="w-44"
+                                >
                                   {canEditMember && (
                                     <DropdownMenuItem
                                       onClick={() => {

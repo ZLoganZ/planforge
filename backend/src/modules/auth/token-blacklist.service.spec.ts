@@ -1,6 +1,7 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { TokenBlacklistService } from './token-blacklist.service.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { RedisService } from '../../database/redis/redis.service.js';
+import { TokenBlacklistService } from './token-blacklist.service.js';
 
 describe('TokenBlacklistService', () => {
   let service: TokenBlacklistService;

@@ -209,75 +209,75 @@ export class TasksService {
 
     const [items, totalItems, statusGroups, priorityGroups, projectGroups] =
       await Promise.all([
-      this.prisma.task.findMany({
-        where,
-        include: {
-          assignee: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-              avatarUrl: true,
+        this.prisma.task.findMany({
+          where,
+          include: {
+            assignee: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                avatarUrl: true,
+              },
+            },
+            reporter: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                avatarUrl: true,
+              },
+            },
+            project: {
+              select: { id: true, key: true, name: true, color: true },
+            },
+            taskLabels: {
+              include: {
+                label: true,
+              },
+            },
+            sprint: {
+              select: { id: true, name: true },
+            },
+            parentTask: {
+              select: {
+                id: true,
+                taskNumber: true,
+                title: true,
+                status: true,
+              },
+            },
+            _count: {
+              select: {
+                subTasks: true,
+                comments: true,
+                attachments: true,
+              },
             },
           },
-          reporter: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-              avatarUrl: true,
-            },
-          },
-          project: {
-            select: { id: true, key: true, name: true, color: true },
-          },
-          taskLabels: {
-            include: {
-              label: true,
-            },
-          },
-          sprint: {
-            select: { id: true, name: true },
-          },
-          parentTask: {
-            select: {
-              id: true,
-              taskNumber: true,
-              title: true,
-              status: true,
-            },
-          },
-          _count: {
-            select: {
-              subTasks: true,
-              comments: true,
-              attachments: true,
-            },
-          },
-        },
-        orderBy: { [sortBy]: sortOrder },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      this.prisma.task.count({ where }),
-      this.prisma.task.groupBy({
-        by: ['status'],
-        _count: { id: true },
-        where: statusFacetWhere,
-      }),
-      this.prisma.task.groupBy({
-        by: ['priority'],
-        _count: { id: true },
-        where: priorityFacetWhere,
-      }),
-      this.prisma.task.groupBy({
-        by: ['projectId'],
-        _count: { id: true },
-        where: projectFacetWhere,
-      }),
-    ]);
+          orderBy: { [sortBy]: sortOrder },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        this.prisma.task.count({ where }),
+        this.prisma.task.groupBy({
+          by: ['status'],
+          _count: { id: true },
+          where: statusFacetWhere,
+        }),
+        this.prisma.task.groupBy({
+          by: ['priority'],
+          _count: { id: true },
+          where: priorityFacetWhere,
+        }),
+        this.prisma.task.groupBy({
+          by: ['projectId'],
+          _count: { id: true },
+          where: projectFacetWhere,
+        }),
+      ]);
 
     const statusCounts: Record<string, number> = {
       BACKLOG: 0,

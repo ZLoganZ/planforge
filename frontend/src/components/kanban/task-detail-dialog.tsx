@@ -26,6 +26,7 @@ import {
   X,
 } from "lucide-react";
 
+import { TaskDeleteModal } from "@/components/tasks/task-delete-modal";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -77,7 +78,6 @@ import {
   useToggleSubtask,
   useUpdateTask,
 } from "@/hooks/use-tasks";
-import { TaskDeleteModal } from "@/components/tasks/task-delete-modal";
 import { cn, getErrorMessage } from "@/lib/utils";
 
 const PRESET_LABEL_COLORS = [
@@ -385,7 +385,6 @@ export function TaskDetailForm({
       setSaveError(getErrorMessage(err, "Failed to save changes."));
     }
   };
-
 
   return (
     <>
@@ -842,7 +841,9 @@ export function TaskDetailForm({
                       {st.assignee && (
                         <span className="flex shrink-0 items-center gap-1 text-[10px] text-muted-foreground">
                           <Avatar className="size-4">
-                            <AvatarImage src={st.assignee.avatarUrl || undefined} />
+                            <AvatarImage
+                              src={st.assignee.avatarUrl || undefined}
+                            />
                             <AvatarFallback className="bg-primary/20 text-[8px] font-semibold text-primary">
                               {st.assignee.firstName[0]}
                             </AvatarFallback>

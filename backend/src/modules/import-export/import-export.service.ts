@@ -295,12 +295,22 @@ export class ImportExportService {
 
     const where: Prisma.TaskWhereInput = {
       deletedAt: null,
-      ...(targetProjectIds?.length ? { projectId: { in: targetProjectIds } } : {}),
-      ...(targetStatuses?.length ? { status: { in: targetStatuses as TaskStatus[] } } : {}),
-      ...(targetPriorities?.length ? { priority: { in: targetPriorities as TaskPriority[] } } : {}),
+      ...(targetProjectIds?.length
+        ? { projectId: { in: targetProjectIds } }
+        : {}),
+      ...(targetStatuses?.length
+        ? { status: { in: targetStatuses as TaskStatus[] } }
+        : {}),
+      ...(targetPriorities?.length
+        ? { priority: { in: targetPriorities as TaskPriority[] } }
+        : {}),
       ...(query.sprintId ? { sprintId: query.sprintId } : {}),
-      ...(query.assignees?.length ? { assigneeId: { in: query.assignees } } : {}),
-      ...(query.labels?.length ? { taskLabels: { some: { labelId: { in: query.labels } } } } : {}),
+      ...(query.assignees?.length
+        ? { assigneeId: { in: query.assignees } }
+        : {}),
+      ...(query.labels?.length
+        ? { taskLabels: { some: { labelId: { in: query.labels } } } }
+        : {}),
       ...(query.search && {
         OR: [
           { title: { contains: query.search, mode: 'insensitive' } },
@@ -308,7 +318,10 @@ export class ImportExportService {
           {
             project: {
               is: {
-                key: { contains: query.search.split('-')[0], mode: 'insensitive' },
+                key: {
+                  contains: query.search.split('-')[0],
+                  mode: 'insensitive',
+                },
               },
             },
           },
@@ -369,7 +382,9 @@ export class ImportExportService {
       'Attachments Count': t._count.attachments,
       'Start Date': t.startDate ? t.startDate.toISOString().split('T')[0] : '',
       'Due Date': t.dueDate ? t.dueDate.toISOString().split('T')[0] : '',
-      'Completed At': t.completedAt ? t.completedAt.toISOString().split('T')[0] : '',
+      'Completed At': t.completedAt
+        ? t.completedAt.toISOString().split('T')[0]
+        : '',
       'Created At': t.createdAt.toISOString(),
       'Updated At': t.updatedAt.toISOString(),
     }));

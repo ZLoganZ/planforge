@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import type { Route } from "next";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Zap } from "lucide-react";
 
@@ -68,8 +68,6 @@ export function LoginForm() {
       </div>
     );
   }
-
-
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">

@@ -54,10 +54,7 @@ export class UsersController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Soft delete user' })
-  remove(
-    @Param('id') id: string,
-    @CurrentUser('id') currentUserId: string,
-  ) {
+  remove(@Param('id') id: string, @CurrentUser('id') currentUserId: string) {
     return this.usersService.softDelete(id, currentUserId);
   }
 }

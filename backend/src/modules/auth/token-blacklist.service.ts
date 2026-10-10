@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+
 import { Injectable, Logger } from '@nestjs/common';
 
 import { RedisService } from '../../database/redis/redis.service.js';
@@ -19,9 +20,10 @@ export class TokenBlacklistService {
     jti?: string,
   ): Promise<void> {
     const nowSeconds = Math.floor(Date.now() / 1000);
-    const ttlSeconds = exp && exp > nowSeconds
-      ? exp - nowSeconds + 30 // add 30s buffer
-      : 15 * 60; // default 15 minutes
+    const ttlSeconds =
+      exp && exp > nowSeconds
+        ? exp - nowSeconds + 30 // add 30s buffer
+        : 15 * 60; // default 15 minutes
 
     const promises: Promise<void>[] = [];
 

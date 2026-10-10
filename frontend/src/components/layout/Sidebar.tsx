@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import type { Route } from "next";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Activity,
@@ -17,12 +17,12 @@ import {
   Settings,
   Users,
   Zap,
+  type LucideIcon,
 } from "lucide-react";
 
 import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { LucideIcon } from "lucide-react";
 
 interface NavItem {
   title: string;

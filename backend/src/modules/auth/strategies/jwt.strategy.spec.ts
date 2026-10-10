@@ -1,8 +1,9 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { JwtStrategy } from './jwt.strategy.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { TokenBlacklistService } from '../token-blacklist.service.js';
+import { JwtStrategy } from './jwt.strategy.js';
 
 describe('JwtStrategy', () => {
   let strategy: JwtStrategy;
@@ -22,7 +23,9 @@ describe('JwtStrategy', () => {
   });
 
   it('should validate successfully when token is not blacklisted', async () => {
-    vi.mocked(tokenBlacklistService.isTokenBlacklisted).mockResolvedValue(false);
+    vi.mocked(tokenBlacklistService.isTokenBlacklisted).mockResolvedValue(
+      false,
+    );
 
     const mockReq = {
       headers: {

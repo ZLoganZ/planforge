@@ -739,7 +739,9 @@ export function DashboardClient() {
                     >
                       <div className="flex items-start gap-2.5">
                         <Avatar className="mt-0.5 size-6 shrink-0">
-                          <AvatarImage src={act.actor?.avatarUrl || undefined} />
+                          <AvatarImage
+                            src={act.actor?.avatarUrl || undefined}
+                          />
                           <AvatarFallback className="text-[9px]">
                             {initials}
                           </AvatarFallback>

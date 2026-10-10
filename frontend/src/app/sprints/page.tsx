@@ -8,7 +8,8 @@ import { SprintsClient } from "./sprints-client";
 
 export const metadata: Metadata = {
   title: "Sprint Planning — PlanForge",
-  description: "Plan sprint capacity, backlog grooming, and track team velocity.",
+  description:
+    "Plan sprint capacity, backlog grooming, and track team velocity.",
 };
 
 export default async function SprintsPage() {

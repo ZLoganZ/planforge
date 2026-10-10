@@ -2,7 +2,15 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Camera, Loader2, LogOut, Moon, Search, Settings, Sun } from "lucide-react";
+import {
+  Camera,
+  Loader2,
+  LogOut,
+  Moon,
+  Search,
+  Settings,
+  Sun,
+} from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

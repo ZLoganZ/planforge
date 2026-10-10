@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 
-import { AppLayout } from "@/components/layout/AppLayout";
 import { TaskDetailForm } from "@/components/kanban/task-detail-dialog";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -50,7 +50,8 @@ export function TaskDetailClient({ id }: { id: string }) {
                 Task not found
               </h3>
               <p className="text-sm text-muted-foreground">
-                The task you are looking for does not exist or may have been deleted.
+                The task you are looking for does not exist or may have been
+                deleted.
               </p>
               <Button asChild variant="outline" className="mt-4">
                 <Link href="/tasks">Return to Tasks list</Link>

@@ -120,7 +120,8 @@ function ProfileSettingsForm() {
     }
   };
 
-  const initials = `${user?.firstName?.charAt(0) || ""}${user?.lastName?.charAt(0) || ""}`.toUpperCase();
+  const initials =
+    `${user?.firstName?.charAt(0) || ""}${user?.lastName?.charAt(0) || ""}`.toUpperCase();
 
   return (
     <div className="space-y-6">
@@ -268,8 +269,8 @@ function ProfileSettingsForm() {
               Sign Out of All Devices
             </p>
             <p className="text-xs text-muted-foreground">
-              Revokes all refresh tokens and sessions for your account across all
-              browsers and devices.
+              Revokes all refresh tokens and sessions for your account across
+              all browsers and devices.
             </p>
           </div>
           <Button

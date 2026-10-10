@@ -152,9 +152,7 @@ export class UsersService {
 
     // CRITICAL: An OWNER account can NEVER be deactivated
     if (dto.isActive === false && targetIsOwner) {
-      throw new ForbiddenException(
-        'Cannot deactivate workspace owner account',
-      );
+      throw new ForbiddenException('Cannot deactivate workspace owner account');
     }
 
     if (currentUserId) {
@@ -172,10 +170,12 @@ export class UsersService {
         }
       } else {
         // Managing another user requires sufficient workspace permissions
-        const requesterMemberships = await this.prisma.workspaceMember.findMany({
-          where: { userId: currentUserId },
-          select: { workspaceId: true, role: true },
-        });
+        const requesterMemberships = await this.prisma.workspaceMember.findMany(
+          {
+            where: { userId: currentUserId },
+            select: { workspaceId: true, role: true },
+          },
+        );
 
         const sharedWorkspaceIds = existing.workspaceMembers.map(
           (m) => m.workspaceId,
@@ -202,9 +202,7 @@ export class UsersService {
 
         // An ADMIN cannot modify an OWNER account
         if (!isOwner && targetIsOwner) {
-          throw new ForbiddenException(
-            'Admins cannot modify workspace owners',
-          );
+          throw new ForbiddenException('Admins cannot modify workspace owners');
         }
 
         // An ADMIN cannot modify another ADMIN account
@@ -275,9 +273,7 @@ export class UsersService {
     );
 
     if (targetIsOwner) {
-      throw new ForbiddenException(
-        'Cannot delete workspace owner account',
-      );
+      throw new ForbiddenException('Cannot delete workspace owner account');
     }
 
     if (currentUserId) {

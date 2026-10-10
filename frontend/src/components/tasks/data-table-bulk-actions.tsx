@@ -115,7 +115,7 @@ export function DataTableBulkActions({ table }: DataTableBulkActionsProps) {
         "Created At",
       ],
       ...selectedRows.map((r) => [
-        `"${(r.original.project?.key ? `${r.original.project.key}-${r.original.taskNumber}` : `PF-${r.original.taskNumber}`)}"`,
+        `"${r.original.project?.key ? `${r.original.project.key}-${r.original.taskNumber}` : `PF-${r.original.taskNumber}`}"`,
         `"${(r.original.title || "").replace(/"/g, '""')}"`,
         `"${(r.original.description || "").replace(/"/g, '""')}"`,
         r.original.status,

@@ -57,10 +57,7 @@ export class WorkspacesController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete workspace' })
-  async remove(
-    @Param('id') id: string,
-    @CurrentUser('id') userId: string,
-  ) {
+  async remove(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.workspacesService.remove(id, userId);
   }
 
@@ -88,7 +85,12 @@ export class WorkspacesController {
     @Body() dto: UpdateWorkspaceMemberDto,
     @CurrentUser('id') userId: string,
   ) {
-    return this.workspacesService.updateMemberRole(id, memberUserId, dto, userId);
+    return this.workspacesService.updateMemberRole(
+      id,
+      memberUserId,
+      dto,
+      userId,
+    );
   }
 
   @Delete(':id/members/:userId')
