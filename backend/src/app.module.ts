@@ -35,12 +35,23 @@ import { WorkspacesModule } from './modules/workspaces/workspaces.module.js';
     }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        connection: {
-          host: configService.get('REDIS_HOST', 'localhost'),
-          port: configService.get('REDIS_PORT', 6379),
-        },
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const redisUrl = configService.get<string>('REDIS_URL');
+        if (redisUrl) {
+          return {
+            connection: {
+              url: redisUrl,
+            },
+          };
+        }
+        return {
+          connection: {
+            host: configService.get('REDIS_HOST', 'localhost'),
+            port: configService.get('REDIS_PORT', 6379),
+            password: configService.get('REDIS_PASSWORD') || undefined,
+          },
+        };
+      },
       inject: [ConfigService],
     }),
     PrismaModule,
