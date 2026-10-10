@@ -3,6 +3,7 @@ import { randomBytes } from 'crypto';
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -75,6 +76,30 @@ export class InvitationsService {
 
     if (!workspace) throw new NotFoundException('Workspace not found');
     if (!inviter) throw new NotFoundException('Inviter user not found');
+
+    const inviterMember = await this.prisma.workspaceMember.findUnique({
+      where: {
+        workspaceId_userId: {
+          workspaceId,
+          userId,
+        },
+      },
+    });
+
+    if (
+      !inviterMember ||
+      (inviterMember.role !== Role.OWNER && inviterMember.role !== Role.ADMIN)
+    ) {
+      throw new ForbiddenException(
+        'Only workspace owners and admins can invite members',
+      );
+    }
+
+    if (role === Role.OWNER && inviterMember.role !== Role.OWNER) {
+      throw new ForbiddenException(
+        'Only workspace owners can invite users as OWNER',
+      );
+    }
 
     // 3. Check if user is already an active member of this workspace
     const existingMember = await this.prisma.workspaceMember.findFirst({
@@ -301,6 +326,24 @@ export class InvitationsService {
 
     if (!invitation) throw new NotFoundException('Invitation not found');
 
+    const inviterMember = await this.prisma.workspaceMember.findUnique({
+      where: {
+        workspaceId_userId: {
+          workspaceId: invitation.workspaceId,
+          userId,
+        },
+      },
+    });
+
+    if (
+      !inviterMember ||
+      (inviterMember.role !== Role.OWNER && inviterMember.role !== Role.ADMIN)
+    ) {
+      throw new ForbiddenException(
+        'Only workspace owners and admins can resend invitations',
+      );
+    }
+
     const inviter = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { firstName: true, lastName: true },
@@ -337,12 +380,32 @@ export class InvitationsService {
     };
   }
 
-  async revoke(id: string) {
+  async revoke(id: string, userId?: string) {
     const invitation = await this.prisma.workspaceInvitation.findUnique({
       where: { id },
     });
 
     if (!invitation) throw new NotFoundException('Invitation not found');
+
+    if (userId) {
+      const inviterMember = await this.prisma.workspaceMember.findUnique({
+        where: {
+          workspaceId_userId: {
+            workspaceId: invitation.workspaceId,
+            userId,
+          },
+        },
+      });
+
+      if (
+        !inviterMember ||
+        (inviterMember.role !== Role.OWNER && inviterMember.role !== Role.ADMIN)
+      ) {
+        throw new ForbiddenException(
+          'Only workspace owners and admins can revoke invitations',
+        );
+      }
+    }
 
     await this.prisma.workspaceInvitation.delete({
       where: { id },

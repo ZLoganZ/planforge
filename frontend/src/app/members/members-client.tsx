@@ -97,10 +97,14 @@ export function MembersClient() {
   const users = (data?.items || []) as UserMember[];
 
   // RBAC permission check: Only OWNER and ADMIN can modify roles or remove members
-  const currentUserRole = currentUser
-    ? (users.find((u) => u.id === currentUser.id)?.role ?? "MEMBER")
-    : "MEMBER";
-  const canManage = currentUserRole === "OWNER" || currentUserRole === "ADMIN";
+  const currentUserRole =
+    currentUser?.role ||
+    (currentUser
+      ? (users.find((u) => u.id === currentUser.id)?.role ?? "MEMBER")
+      : "MEMBER");
+  const isOwner = currentUserRole === "OWNER";
+  const isAdmin = currentUserRole === "ADMIN";
+  const canManage = isOwner || isAdmin;
 
   const getRoleBadge = (role: string) => {
     switch (role) {
@@ -368,6 +372,17 @@ export function MembersClient() {
                     const initials =
                       `${member.firstName[0]}${member.lastName[0]}`.toUpperCase();
                     const isSelf = currentUser?.id === member.id;
+                    const canEditMember =
+                      !isSelf &&
+                      (isOwner ||
+                        (member.role !== "OWNER" &&
+                          member.role !== "ADMIN"));
+                    const canToggleActiveMember =
+                      !isSelf &&
+                      member.role !== "OWNER" &&
+                      (isOwner || member.role !== "ADMIN");
+                    const showActionMenu =
+                      canManage && (canEditMember || canToggleActiveMember);
 
                     return (
                       <tr
@@ -390,14 +405,14 @@ export function MembersClient() {
                               <div className="flex items-center gap-2">
                                 <span
                                   onClick={() => {
-                                    if (canManage) {
+                                    if (canEditMember) {
                                       setSelectedMemberForEdit(member);
                                       setIsEditModalOpen(true);
                                     }
                                   }}
                                   className={cn(
                                     "font-semibold text-foreground",
-                                    canManage &&
+                                    canEditMember &&
                                       "cursor-pointer hover:text-primary hover:underline"
                                   )}
                                 >
@@ -448,47 +463,51 @@ export function MembersClient() {
                         {/* Actions */}
                         {canManage && (
                           <td className="px-4 py-3.5 text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="size-8 text-muted-foreground hover:text-foreground"
-                                >
-                                  <MoreVertical className="size-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-44">
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setSelectedMemberForEdit(member);
-                                    setIsEditModalOpen(true);
-                                  }}
-                                  className="gap-2 text-xs"
-                                >
-                                  <Pencil className="size-3.5 text-primary" />
-                                  Edit Member
-                                </DropdownMenuItem>
-                                {!isSelf && (
-                                  <DropdownMenuItem
-                                    onClick={() => handleToggleActive(member)}
-                                    className="gap-2 text-xs"
+                            {showActionMenu && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-8 text-muted-foreground hover:text-foreground"
                                   >
-                                    {member.isActive ? (
-                                      <>
-                                        <UserX className="size-3.5 text-rose-400" />
-                                        Deactivate Member
-                                      </>
-                                    ) : (
-                                      <>
-                                        <ShieldCheck className="size-3.5 text-emerald-400" />
-                                        Activate Member
-                                      </>
-                                    )}
-                                  </DropdownMenuItem>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                                    <MoreVertical className="size-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-44">
+                                  {canEditMember && (
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedMemberForEdit(member);
+                                        setIsEditModalOpen(true);
+                                      }}
+                                      className="gap-2 text-xs"
+                                    >
+                                      <Pencil className="size-3.5 text-primary" />
+                                      Edit Member
+                                    </DropdownMenuItem>
+                                  )}
+                                  {canToggleActiveMember && (
+                                    <DropdownMenuItem
+                                      onClick={() => handleToggleActive(member)}
+                                      className="gap-2 text-xs"
+                                    >
+                                      {member.isActive ? (
+                                        <>
+                                          <UserX className="size-3.5 text-rose-400" />
+                                          Deactivate Member
+                                        </>
+                                      ) : (
+                                        <>
+                                          <ShieldCheck className="size-3.5 text-emerald-400" />
+                                          Activate Member
+                                        </>
+                                      )}
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
                           </td>
                         )}
                       </tr>
@@ -821,6 +840,7 @@ export function MembersClient() {
           onOpenChange={setIsEditModalOpen}
           member={selectedMemberForEdit}
           currentUserId={currentUser?.id}
+          currentUserRole={currentUserRole}
         />
       </div>
     </AppLayout>

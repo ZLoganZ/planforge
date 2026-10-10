@@ -74,14 +74,19 @@ export class RolesGuard implements CanActivate {
         if (member) effectiveRole = member.role;
       }
 
-      // Fallback: check any workspace membership for the user
+      // Fallback: check any workspace membership for the user and pick highest privilege
       if (!effectiveRole) {
-        const member = await this.prisma.workspaceMember.findFirst({
+        const members = await this.prisma.workspaceMember.findMany({
           where: { userId: user.id },
-          orderBy: { role: 'asc' }, // OWNER comes first in priority
           select: { role: true },
         });
-        if (member) effectiveRole = member.role;
+        if (members.length > 0) {
+          effectiveRole = members.reduce((highest, current) =>
+            (ROLE_WEIGHT[current.role] ?? 0) > (ROLE_WEIGHT[highest.role] ?? 0)
+              ? current
+              : highest,
+          ).role;
+        }
       }
     }
 

@@ -12,6 +12,11 @@ export class StartImportDto {
 }
 
 export class ExportQueryDto {
+  @ApiPropertyOptional({ description: 'Search term for text filtering' })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -47,4 +52,23 @@ export class ExportQueryDto {
   @IsArray()
   @IsString({ each: true })
   priorities?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  sprintId?: string;
+
+  @ApiPropertyOptional({ isArray: true })
+  @IsOptional()
+  @Transform(toArray)
+  @IsArray()
+  @IsString({ each: true })
+  assignees?: string[];
+
+  @ApiPropertyOptional({ isArray: true })
+  @IsOptional()
+  @Transform(toArray)
+  @IsArray()
+  @IsString({ each: true })
+  labels?: string[];
 }

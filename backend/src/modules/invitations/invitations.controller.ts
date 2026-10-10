@@ -92,7 +92,7 @@ export class InvitationsController {
   @ApiBearerAuth('JWT-auth')
   @Delete(':id')
   @ApiOperation({ summary: 'Revoke/cancel invitation' })
-  async revoke(@Param('id') id: string) {
-    return this.invitationsService.revoke(id);
+  async revoke(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.invitationsService.revoke(id, userId);
   }
 }

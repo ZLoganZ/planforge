@@ -298,6 +298,22 @@ export class ImportExportService {
       ...(targetProjectIds?.length ? { projectId: { in: targetProjectIds } } : {}),
       ...(targetStatuses?.length ? { status: { in: targetStatuses as TaskStatus[] } } : {}),
       ...(targetPriorities?.length ? { priority: { in: targetPriorities as TaskPriority[] } } : {}),
+      ...(query.sprintId ? { sprintId: query.sprintId } : {}),
+      ...(query.assignees?.length ? { assigneeId: { in: query.assignees } } : {}),
+      ...(query.labels?.length ? { taskLabels: { some: { labelId: { in: query.labels } } } } : {}),
+      ...(query.search && {
+        OR: [
+          { title: { contains: query.search, mode: 'insensitive' } },
+          { description: { contains: query.search, mode: 'insensitive' } },
+          {
+            project: {
+              is: {
+                key: { contains: query.search.split('-')[0], mode: 'insensitive' },
+              },
+            },
+          },
+        ],
+      }),
     };
 
     const tasks = await this.prisma.task.findMany({

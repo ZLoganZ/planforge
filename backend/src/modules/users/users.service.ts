@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma, Role } from '@prisma/client';
 import { hash } from 'bcryptjs';
 
@@ -137,8 +141,91 @@ export class UsersService {
     };
   }
 
-  async update(id: string, dto: UpdateUserDto) {
+  async update(id: string, dto: UpdateUserDto, currentUserId?: string) {
     const existing = await this.findOne(id); // Ensure exists
+    const targetIsOwner = existing.workspaceMembers.some(
+      (m) => m.role === Role.OWNER,
+    );
+    const targetIsAdmin = existing.workspaceMembers.some(
+      (m) => m.role === Role.ADMIN,
+    );
+
+    // CRITICAL: An OWNER account can NEVER be deactivated
+    if (dto.isActive === false && targetIsOwner) {
+      throw new ForbiddenException(
+        'Cannot deactivate workspace owner account',
+      );
+    }
+
+    if (currentUserId) {
+      const isSelf = currentUserId === id;
+
+      if (isSelf) {
+        // Users cannot change their own role or deactivate their own account
+        if (dto.role) {
+          throw new ForbiddenException('You cannot change your own role');
+        }
+        if (dto.isActive === false) {
+          throw new ForbiddenException(
+            'You cannot deactivate your own account',
+          );
+        }
+      } else {
+        // Managing another user requires sufficient workspace permissions
+        const requesterMemberships = await this.prisma.workspaceMember.findMany({
+          where: { userId: currentUserId },
+          select: { workspaceId: true, role: true },
+        });
+
+        const sharedWorkspaceIds = existing.workspaceMembers.map(
+          (m) => m.workspaceId,
+        );
+        const relevantMemberships = requesterMemberships.filter(
+          (rm) =>
+            sharedWorkspaceIds.length === 0 ||
+            sharedWorkspaceIds.includes(rm.workspaceId),
+        );
+        const roles = (
+          relevantMemberships.length > 0
+            ? relevantMemberships
+            : requesterMemberships
+        ).map((m) => m.role);
+
+        const isOwner = roles.includes(Role.OWNER);
+        const isAdmin = roles.includes(Role.ADMIN);
+
+        if (!isOwner && !isAdmin) {
+          throw new ForbiddenException(
+            'Insufficient permissions: Only workspace owners and admins can manage members',
+          );
+        }
+
+        // An ADMIN cannot modify an OWNER account
+        if (!isOwner && targetIsOwner) {
+          throw new ForbiddenException(
+            'Admins cannot modify workspace owners',
+          );
+        }
+
+        // An ADMIN cannot modify another ADMIN account
+        if (!isOwner && targetIsAdmin) {
+          throw new ForbiddenException('Admins cannot modify other admins');
+        }
+
+        // Only an OWNER can promote someone to OWNER
+        if (dto.role === Role.OWNER && !isOwner) {
+          throw new ForbiddenException(
+            'Only workspace owners can assign the OWNER role',
+          );
+        }
+
+        // Cannot demote an OWNER without transferring ownership
+        if (targetIsOwner && dto.role && dto.role !== Role.OWNER) {
+          throw new ForbiddenException('Cannot demote workspace owner');
+        }
+      }
+    }
+
     const { role, ...userData } = dto;
 
     if (role && existing.workspaceMembers.length > 0) {
@@ -178,8 +265,60 @@ export class UsersService {
     };
   }
 
-  async softDelete(id: string) {
-    await this.findOne(id);
+  async softDelete(id: string, currentUserId?: string) {
+    const existing = await this.findOne(id);
+    const targetIsOwner = existing.workspaceMembers.some(
+      (m) => m.role === Role.OWNER,
+    );
+    const targetIsAdmin = existing.workspaceMembers.some(
+      (m) => m.role === Role.ADMIN,
+    );
+
+    if (targetIsOwner) {
+      throw new ForbiddenException(
+        'Cannot delete workspace owner account',
+      );
+    }
+
+    if (currentUserId) {
+      if (currentUserId === id) {
+        throw new ForbiddenException(
+          'Cannot delete your own account via this endpoint',
+        );
+      }
+
+      const requesterMemberships = await this.prisma.workspaceMember.findMany({
+        where: { userId: currentUserId },
+        select: { workspaceId: true, role: true },
+      });
+
+      const sharedWorkspaceIds = existing.workspaceMembers.map(
+        (m) => m.workspaceId,
+      );
+      const relevantMemberships = requesterMemberships.filter(
+        (rm) =>
+          sharedWorkspaceIds.length === 0 ||
+          sharedWorkspaceIds.includes(rm.workspaceId),
+      );
+      const roles = (
+        relevantMemberships.length > 0
+          ? relevantMemberships
+          : requesterMemberships
+      ).map((m) => m.role);
+
+      const isOwner = roles.includes(Role.OWNER);
+      const isAdmin = roles.includes(Role.ADMIN);
+
+      if (!isOwner && !isAdmin) {
+        throw new ForbiddenException(
+          'Insufficient permissions: Only workspace owners and admins can delete members',
+        );
+      }
+
+      if (!isOwner && targetIsAdmin) {
+        throw new ForbiddenException('Admins cannot delete other admins');
+      }
+    }
 
     await this.prisma.user.update({
       where: { id },
@@ -192,6 +331,28 @@ export class UsersService {
   async invite(dto: InviteUserDto, currentUserId?: string) {
     const email = dto.email.trim().toLowerCase();
     const role = dto.role ?? Role.MEMBER;
+
+    if (currentUserId) {
+      const requesterMemberships = await this.prisma.workspaceMember.findMany({
+        where: { userId: currentUserId },
+        select: { workspaceId: true, role: true },
+      });
+      const roles = requesterMemberships.map((m) => m.role);
+      const isOwner = roles.includes(Role.OWNER);
+      const isAdmin = roles.includes(Role.ADMIN);
+
+      if (!isOwner && !isAdmin) {
+        throw new ForbiddenException(
+          'Insufficient permissions: Only workspace owners and admins can invite members',
+        );
+      }
+
+      if (role === Role.OWNER && !isOwner) {
+        throw new ForbiddenException(
+          'Only workspace owners can invite users as OWNER',
+        );
+      }
+    }
 
     // Find active workspace for the inviting user or default workspace
     let workspaceId: string | undefined;

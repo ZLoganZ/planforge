@@ -201,10 +201,20 @@ export class AuthService {
         isActive: true,
         createdAt: true,
         updatedAt: true,
+        workspaceMembers: {
+          select: {
+            role: true,
+            workspaceId: true,
+            workspace: { select: { id: true, name: true, slug: true } },
+          },
+        },
       },
     });
 
-    return user;
+    return {
+      ...user,
+      role: user.workspaceMembers[0]?.role ?? 'MEMBER',
+    };
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
@@ -221,10 +231,19 @@ export class AuthService {
         lastName: true,
         avatarUrl: true,
         updatedAt: true,
+        workspaceMembers: {
+          select: {
+            role: true,
+            workspaceId: true,
+          },
+        },
       },
     });
 
-    return user;
+    return {
+      ...user,
+      role: user.workspaceMembers[0]?.role ?? 'MEMBER',
+    };
   }
 
   async generateAuthResponse(user: {
@@ -234,7 +253,13 @@ export class AuthService {
     lastName: string;
     avatarUrl?: string | null;
   }) {
-    const tokens = await this.generateTokens(user.id, user.email);
+    const [tokens, membership] = await Promise.all([
+      this.generateTokens(user.id, user.email),
+      this.prisma.workspaceMember.findFirst({
+        where: { userId: user.id },
+        select: { role: true },
+      }),
+    ]);
     await this.storeRefreshToken(user.id, tokens.refreshToken);
     return {
       user: {
@@ -243,6 +268,7 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         avatarUrl: user.avatarUrl ?? null,
+        role: membership?.role ?? 'MEMBER',
       },
       ...tokens,
     };

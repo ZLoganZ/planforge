@@ -105,8 +105,22 @@ export class WorkspacesService {
     });
   }
 
-  async update(id: string, dto: UpdateWorkspaceDto) {
+  async update(id: string, dto: UpdateWorkspaceDto, userId?: string) {
     await this.findOne(id);
+
+    if (userId) {
+      const member = await this.prisma.workspaceMember.findUnique({
+        where: { workspaceId_userId: { workspaceId: id, userId } },
+      });
+      if (
+        !member ||
+        (member.role !== Role.OWNER && member.role !== Role.ADMIN)
+      ) {
+        throw new ForbiddenException(
+          'Only workspace owners and admins can update workspace details',
+        );
+      }
+    }
 
     return this.prisma.workspace.update({
       where: { id },
@@ -135,8 +149,31 @@ export class WorkspacesService {
     });
   }
 
-  async addMember(workspaceId: string, dto: AddWorkspaceMemberDto) {
+  async addMember(
+    workspaceId: string,
+    dto: AddWorkspaceMemberDto,
+    userId?: string,
+  ) {
     await this.findOne(workspaceId);
+
+    if (userId) {
+      const requester = await this.prisma.workspaceMember.findUnique({
+        where: { workspaceId_userId: { workspaceId, userId } },
+      });
+      if (
+        !requester ||
+        (requester.role !== Role.OWNER && requester.role !== Role.ADMIN)
+      ) {
+        throw new ForbiddenException(
+          'Only workspace owners and admins can add members',
+        );
+      }
+      if (dto.role === Role.OWNER && requester.role !== Role.OWNER) {
+        throw new ForbiddenException(
+          'Only workspace owners can add members as OWNER',
+        );
+      }
+    }
 
     const existing = await this.prisma.workspaceMember.findUnique({
       where: {
@@ -175,6 +212,7 @@ export class WorkspacesService {
     workspaceId: string,
     memberUserId: string,
     dto: UpdateWorkspaceMemberDto,
+    userId?: string,
   ) {
     const member = await this.prisma.workspaceMember.findUnique({
       where: {
@@ -187,6 +225,42 @@ export class WorkspacesService {
 
     if (!member) {
       throw new NotFoundException('Member not found in workspace');
+    }
+
+    if (userId) {
+      if (userId === memberUserId) {
+        throw new ForbiddenException('Cannot change your own role');
+      }
+
+      const requester = await this.prisma.workspaceMember.findUnique({
+        where: { workspaceId_userId: { workspaceId, userId } },
+      });
+
+      if (
+        !requester ||
+        (requester.role !== Role.OWNER && requester.role !== Role.ADMIN)
+      ) {
+        throw new ForbiddenException(
+          'Only workspace owners and admins can update member roles',
+        );
+      }
+
+      if (member.role === Role.OWNER) {
+        throw new ForbiddenException('Cannot demote workspace owner');
+      }
+
+      if (requester.role !== Role.OWNER) {
+        if (member.role === Role.ADMIN) {
+          throw new ForbiddenException(
+            'Admins cannot change roles of other admins',
+          );
+        }
+        if (dto.role === Role.OWNER) {
+          throw new ForbiddenException(
+            'Only workspace owners can assign the OWNER role',
+          );
+        }
+      }
     }
 
     return this.prisma.workspaceMember.update({
@@ -211,7 +285,11 @@ export class WorkspacesService {
     });
   }
 
-  async removeMember(workspaceId: string, memberUserId: string) {
+  async removeMember(
+    workspaceId: string,
+    memberUserId: string,
+    userId?: string,
+  ) {
     const member = await this.prisma.workspaceMember.findUnique({
       where: {
         workspaceId_userId: {
@@ -223,6 +301,29 @@ export class WorkspacesService {
 
     if (!member) {
       throw new NotFoundException('Member not found in workspace');
+    }
+
+    if (member.role === Role.OWNER) {
+      throw new ForbiddenException('Cannot remove the workspace owner');
+    }
+
+    if (userId && userId !== memberUserId) {
+      const requester = await this.prisma.workspaceMember.findUnique({
+        where: { workspaceId_userId: { workspaceId, userId } },
+      });
+
+      if (
+        !requester ||
+        (requester.role !== Role.OWNER && requester.role !== Role.ADMIN)
+      ) {
+        throw new ForbiddenException(
+          'Only workspace owners and admins can remove members',
+        );
+      }
+
+      if (requester.role !== Role.OWNER && member.role === Role.ADMIN) {
+        throw new ForbiddenException('Admins cannot remove other admins');
+      }
     }
 
     return this.prisma.workspaceMember.delete({

@@ -25,21 +25,25 @@ export class EmailService {
       this.configService.get<string>('SMTP_FROM') ||
       'PlanForge <no-reply@planforge.dev>';
 
-    if (host && user && pass) {
+    if (host) {
       try {
+        const hasAuth = Boolean(user && pass);
         this.transporter = nodemailer.createTransport({
           host,
           port,
           secure: port === 465,
-          auth: { user, pass },
+          ignoreTLS: port === 1025 || host === 'localhost',
+          ...(hasAuth ? { auth: { user, pass } } : {}),
         });
-        this.logger.log(`SMTP configured: ${host}:${port}`);
+        this.logger.log(
+          `SMTP configured: ${host}:${port}${hasAuth ? ` (authenticated as ${user})` : ' (no auth / local relay)'}`,
+        );
       } catch (err) {
         this.logger.warn(`Failed to initialize SMTP transporter: ${err}`);
       }
     } else {
       this.logger.log(
-        'No SMTP credentials found in environment. Emails will be logged to console in dev mode.',
+        'No SMTP host configured in environment. Emails will be logged to console in dev mode.',
       );
     }
   }

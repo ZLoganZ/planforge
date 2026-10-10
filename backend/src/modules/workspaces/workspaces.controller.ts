@@ -47,8 +47,12 @@ export class WorkspacesController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update workspace details' })
-  async update(@Param('id') id: string, @Body() dto: UpdateWorkspaceDto) {
-    return this.workspacesService.update(id, dto);
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateWorkspaceDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.workspacesService.update(id, dto, userId);
   }
 
   @Delete(':id')
@@ -68,8 +72,12 @@ export class WorkspacesController {
 
   @Post(':id/members')
   @ApiOperation({ summary: 'Add a member to workspace' })
-  async addMember(@Param('id') id: string, @Body() dto: AddWorkspaceMemberDto) {
-    return this.workspacesService.addMember(id, dto);
+  async addMember(
+    @Param('id') id: string,
+    @Body() dto: AddWorkspaceMemberDto,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.workspacesService.addMember(id, dto, userId);
   }
 
   @Patch(':id/members/:userId')
@@ -78,8 +86,9 @@ export class WorkspacesController {
     @Param('id') id: string,
     @Param('userId') memberUserId: string,
     @Body() dto: UpdateWorkspaceMemberDto,
+    @CurrentUser('id') userId: string,
   ) {
-    return this.workspacesService.updateMemberRole(id, memberUserId, dto);
+    return this.workspacesService.updateMemberRole(id, memberUserId, dto, userId);
   }
 
   @Delete(':id/members/:userId')
@@ -87,7 +96,8 @@ export class WorkspacesController {
   async removeMember(
     @Param('id') id: string,
     @Param('userId') memberUserId: string,
+    @CurrentUser('id') userId: string,
   ) {
-    return this.workspacesService.removeMember(id, memberUserId);
+    return this.workspacesService.removeMember(id, memberUserId, userId);
   }
 }

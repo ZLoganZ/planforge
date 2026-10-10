@@ -31,17 +31,20 @@ interface MemberModalProps {
   onOpenChange: (open: boolean) => void;
   member: UserMember | null;
   currentUserId?: string;
+  currentUserRole?: string;
   onSuccess?: () => void;
 }
 
 function MemberEditForm({
   member,
   isSelf,
+  currentUserRole,
   onClose,
   onSuccess,
 }: {
   member: UserMember;
   isSelf: boolean;
+  currentUserRole?: string;
   onClose: () => void;
   onSuccess?: () => void;
 }) {
@@ -191,10 +194,13 @@ function MemberEditForm({
             {isSelf && (
               <span className="font-normal text-muted-foreground">(Self)</span>
             )}
+            {member.role === "OWNER" && !isSelf && (
+              <span className="font-normal text-amber-500">(Owner)</span>
+            )}
           </Label>
           <Select
             value={role}
-            disabled={isSelf}
+            disabled={isSelf || member.role === "OWNER"}
             onValueChange={(val) =>
               setRole(val as "OWNER" | "ADMIN" | "MEMBER" | "VIEWER")
             }
@@ -203,9 +209,11 @@ function MemberEditForm({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="OWNER" className="text-xs">
-                OWNER (Full Workspace Control)
-              </SelectItem>
+              {(currentUserRole === "OWNER" || member.role === "OWNER") && (
+                <SelectItem value="OWNER" className="text-xs">
+                  OWNER (Full Workspace Control)
+                </SelectItem>
+              )}
               <SelectItem value="ADMIN" className="text-xs">
                 ADMIN (Manage Projects & Members)
               </SelectItem>
@@ -228,7 +236,7 @@ function MemberEditForm({
           </Label>
           <Select
             value={isActive ? "ACTIVE" : "INACTIVE"}
-            disabled={isSelf}
+            disabled={isSelf || member.role === "OWNER"}
             onValueChange={(val) => setIsActive(val === "ACTIVE")}
           >
             <SelectTrigger className="h-9 w-full text-xs">
@@ -243,6 +251,11 @@ function MemberEditForm({
               </SelectItem>
             </SelectContent>
           </Select>
+          {member.role === "OWNER" && (
+            <p className="text-[10px] text-muted-foreground">
+              Workspace owner account cannot be deactivated.
+            </p>
+          )}
         </div>
       </div>
 
@@ -279,6 +292,7 @@ export function MemberModal({
   onOpenChange,
   member,
   currentUserId,
+  currentUserRole,
   onSuccess,
 }: MemberModalProps) {
   return (
@@ -289,6 +303,7 @@ export function MemberModal({
             key={member.id}
             member={member}
             isSelf={Boolean(currentUserId && member.id === currentUserId)}
+            currentUserRole={currentUserRole}
             onClose={() => onOpenChange(false)}
             onSuccess={onSuccess}
           />

@@ -44,13 +44,20 @@ export class UsersController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update user (role, status, profile)' })
-  update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
-    return this.usersService.update(id, dto);
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateUserDto,
+    @CurrentUser('id') currentUserId: string,
+  ) {
+    return this.usersService.update(id, dto, currentUserId);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Soft delete user' })
-  remove(@Param('id') id: string) {
-    return this.usersService.softDelete(id);
+  remove(
+    @Param('id') id: string,
+    @CurrentUser('id') currentUserId: string,
+  ) {
+    return this.usersService.softDelete(id, currentUserId);
   }
 }
